@@ -73,10 +73,13 @@ def create_summary_tear_sheet(
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     long_short : bool
         Should this computation happen on a long short portfolio? if so, then
         mean quantile returns will be demeaned across the factor universe.
+
     group_neutral : bool
         Should this computation happen on a group neutral portfolio? if so,
         returns demeaning will occur on the group level.
@@ -189,17 +192,21 @@ def create_returns_tear_sheet(
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to,
         and (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     long_short : bool
         Should this computation happen on a long short portfolio? if so, then
         mean quantile returns will be demeaned across the factor universe.
         Additionally factor values will be demeaned across the factor universe
         when factor weighting the portfolio for cumulative returns plots
+
     group_neutral : bool
         Should this computation happen on a group neutral portfolio? if so,
         returns demeaning will occur on the group level.
         Additionally each group will weight the same in cumulative returns
         plots
+
     by_group : bool
         If True, display graphs separately for each group.
     """
@@ -358,7 +365,9 @@ def create_information_tear_sheet(
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     group_neutral : bool
         Demean forward returns by group before computing IC.
     by_group : bool
@@ -418,7 +427,9 @@ def create_turnover_tear_sheet(factor_data, turnover_periods=None):
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     turnover_periods : sequence[string], optional
         Periods to compute turnover analysis on. By default periods in
         'factor_data' are used but custom periods can provided instead. This
@@ -501,17 +512,24 @@ def create_full_tear_sheet(factor_data,
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     long_short : bool
         Should this computation happen on a long short portfolio?
-        - See tears.create_returns_tear_sheet for details on how this flag
-        affects returns analysis
+
+        - See :class:`alphalens.tears.create_returns_tear_sheet` for details on how this flag
+          affects returns analysis
+
     group_neutral : bool
         Should this computation happen on a group neutral portfolio?
-        - See tears.create_returns_tear_sheet for details on how this flag
-        affects returns analysis
-        - See tears.create_information_tear_sheet for details on how this
-        flag affects information analysis
+
+        - See :class:`alphalens.tears.create_returns_tear_sheet` for details on how this flag
+          affects returns analysis
+
+        - See :class:`alphalens.tears.create_information_tear_sheet` for details on how this
+          flag affects information analysis
+
     by_group : bool
         If True, display graphs separately for each group.
     """
@@ -545,21 +563,29 @@ def create_event_returns_tear_sheet(factor_data,
         containing the values for a single alpha factor, the factor
         quantile/bin that factor value belongs to and (optionally) the group
         the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     returns : pd.DataFrame
         A DataFrame indexed by date with assets in the columns containing daily
         returns.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     avgretplot: tuple (int, int) - (before, after)
         If not None, plot quantile average cumulative returns
+
     long_short : bool
         Should this computation happen on a long short portfolio? if so then
         factor returns will be demeaned across the factor universe
+
     group_neutral : bool
         Should this computation happen on a group neutral portfolio? if so,
         returns demeaning will occur on the group level.
+
     std_bar : boolean, optional
         Show plots with standard deviation bars, one for each quantile
+
     by_group : bool
         If True, display graphs separately for each group.
     """
@@ -648,17 +674,22 @@ def create_event_study_tear_sheet(factor_data,
         containing the values for a single event, forward returns for each
         period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
+
     returns : pd.DataFrame, required only if 'avgretplot' is provided
         A DataFrame indexed by date with assets in the columns containing daily
         returns.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
     avgretplot: tuple (int, int) - (before, after), optional
         If not None, plot event style average cumulative returns within a
         window (pre and post event).
+
     rate_of_ret : bool, optional
         Display rate of return instead of simple return in 'Mean Period Wise
         Return By Factor Quantile' and 'Period Wise Return By Factor Quantile'
         plots
+
     n_bars : int, optional
         Number of bars in event distribution plot
     """

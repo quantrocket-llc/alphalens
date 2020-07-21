@@ -66,7 +66,7 @@ def non_unique_bin_edges_error(func):
         'quantiles' forces the buckets to have the same number of records.
     4 - for factors with discrete values use the 'bins' option with custom
         ranges and create a range for each discrete value
-    Please see utils.get_clean_factor_and_forward_returns documentation for
+    Please see :class:`alphalens.utils.get_clean_factor_and_forward_returns` documentation for
     full documentation of 'bins' and 'quantiles' options.
 
 """
@@ -99,7 +99,7 @@ def quantize_factor(factor_data,
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
 
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
 
     quantiles : int or sequence[float]
         Number of equal-sized quantile buckets to use in factor bucketing.
@@ -228,7 +228,7 @@ def compute_forward_returns(factor,
         A MultiIndex Series indexed by timestamp (level 0) and asset
         (level 1), containing the values for a single alpha factor.
 
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+        - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
 
     prices : pd.DataFrame
         Pricing data to use in forward price calculation.
@@ -474,6 +474,7 @@ def get_clean_factor(factor,
         A MultiIndex Series indexed by timestamp (level 0) and asset
         (level 1), containing the values for a single alpha factor.
         ::
+
             -----------------------------------
                 date    |    asset   |
             -----------------------------------
@@ -498,21 +499,22 @@ def get_clean_factor(factor,
         This information is currently used only in cumulative returns
         computation
         ::
-            ---------------------------------------
-                       |       | 1D  | 5D  | 10D
-            ---------------------------------------
-                date   | asset |     |     |
-            ---------------------------------------
-                       | AAPL  | 0.09|-0.01|-0.079
-                       ----------------------------
-                       | BA    | 0.02| 0.06| 0.020
-                       ----------------------------
-            2014-01-01 | CMG   | 0.03| 0.09| 0.036
-                       ----------------------------
-                       | DAL   |-0.02|-0.06|-0.029
-                       ----------------------------
-                       | LULU  |-0.03| 0.05|-0.009
-                       ----------------------------
+
+            -----------------------------------------
+                       |       |  1D  |  5D  | 10D
+            -----------------------------------------
+                date   | asset |      |      |
+            -----------------------------------------
+                       | AAPL  |  0.09| -0.01| -0.079
+                       ------------------------------
+                       | BA    |  0.02|  0.06|  0.020
+                       ------------------------------
+            2014-01-01 | CMG   |  0.03|  0.09|  0.036
+                       ------------------------------
+                       | DAL   | -0.02| -0.06| -0.029
+                       ------------------------------
+                       | LULU  | -0.03|  0.05| -0.009
+                       ------------------------------
 
     groupby : pd.Series - MultiIndex or dict
         Either A MultiIndex Series indexed by date and asset,
@@ -570,22 +572,23 @@ def get_clean_factor(factor,
         - 'date' index freq property (merged_data.index.levels[0].freq) is the
           same as that of the input forward returns data. This is currently
           used only in cumulative returns computation
-        ::
-           -------------------------------------------------------------------
-                      |       | 1D  | 5D  | 10D  |factor|group|factor_quantile
-           -------------------------------------------------------------------
-               date   | asset |     |     |      |      |     |
-           -------------------------------------------------------------------
-                      | AAPL  | 0.09|-0.01|-0.079|  0.5 |  G1 |      3
-                      --------------------------------------------------------
-                      | BA    | 0.02| 0.06| 0.020| -1.1 |  G2 |      5
-                      --------------------------------------------------------
-           2014-01-01 | CMG   | 0.03| 0.09| 0.036|  1.7 |  G2 |      1
-                      --------------------------------------------------------
-                      | DAL   |-0.02|-0.06|-0.029| -0.1 |  G3 |      5
-                      --------------------------------------------------------
-                      | LULU  |-0.03| 0.05|-0.009|  2.7 |  G1 |      2
-                      --------------------------------------------------------
+          ::
+
+            -------------------------------------------------------------------------
+                       |       |  1D  |  5D  |  10D  | factor| group| factor_quantile
+            -------------------------------------------------------------------------
+                date   | asset |      |      |       |       |      |
+            -------------------------------------------------------------------------
+                       | AAPL  |  0.09| -0.01| -0.079|   0.5 |   G1 |      3
+                       --------------------------------------------------------------
+                       | BA    |  0.02|  0.06|  0.020|  -1.1 |   G2 |      5
+                       --------------------------------------------------------------
+            2014-01-01 | CMG   |  0.03|  0.09|  0.036|   1.7 |   G2 |      1
+                       --------------------------------------------------------------
+                       | DAL   | -0.02| -0.06| -0.029|  -0.1 |   G3 |      5
+                       --------------------------------------------------------------
+                       | LULU  | -0.03|  0.05| -0.009|   2.7 |   G1 |      2
+                       --------------------------------------------------------------
     """
 
     initial_amount = float(len(factor.index))
@@ -690,6 +693,7 @@ def get_clean_factor_and_forward_returns(factor,
         A MultiIndex Series indexed by timestamp (level 0) and asset
         (level 1), containing the values for a single alpha factor.
         ::
+
             -----------------------------------
                 date    |    asset   |
             -----------------------------------
@@ -726,17 +730,18 @@ def get_clean_factor_and_forward_returns(factor,
         timestamps will be considered the sell price for that asset when
         computing 'period' forward returns.
         ::
-            ----------------------------------------------------
-                        | AAPL |  BA  |  CMG  |  DAL  |  LULU  |
-            ----------------------------------------------------
-               Date     |      |      |       |       |        |
-            ----------------------------------------------------
-            2014-01-01  |605.12| 24.58|  11.72| 54.43 |  37.14 |
-            ----------------------------------------------------
-            2014-01-02  |604.35| 22.23|  12.21| 52.78 |  33.63 |
-            ----------------------------------------------------
-            2014-01-03  |607.94| 21.68|  14.36| 53.94 |  29.37 |
-            ----------------------------------------------------
+
+            -----------------------------------------------------
+                        |  AAPL |  BA  |  CMG  |  DAL  |  LULU  |
+            -----------------------------------------------------
+               Date     |       |      |       |       |        |
+            -----------------------------------------------------
+            2014-01-01  | 605.12| 24.58|  11.72| 54.43 |  37.14 |
+            -----------------------------------------------------
+            2014-01-02  | 604.35| 22.23|  12.21| 52.78 |  33.63 |
+            -----------------------------------------------------
+            2014-01-03  | 607.94| 21.68|  14.36| 53.94 |  29.37 |
+            -----------------------------------------------------
 
     groupby : pd.Series - MultiIndex or dict
         Either A MultiIndex Series indexed by date and asset,
@@ -796,32 +801,35 @@ def get_clean_factor_and_forward_returns(factor,
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
+
         - forward returns column names follow  the format accepted by
           pd.Timedelta (e.g. '1D', '30m', '3h15m', '1D1h', etc)
+
         - 'date' index freq property (merged_data.index.levels[0].freq) will be
           set to a trading calendar (pandas DateOffset) inferred from the input
           data (see infer_trading_calendar for more details). This is currently
           used only in cumulative returns computation
-        ::
-           -------------------------------------------------------------------
-                      |       | 1D  | 5D  | 10D  |factor|group|factor_quantile
-           -------------------------------------------------------------------
-               date   | asset |     |     |      |      |     |
-           -------------------------------------------------------------------
-                      | AAPL  | 0.09|-0.01|-0.079|  0.5 |  G1 |      3
-                      --------------------------------------------------------
-                      | BA    | 0.02| 0.06| 0.020| -1.1 |  G2 |      5
-                      --------------------------------------------------------
-           2014-01-01 | CMG   | 0.03| 0.09| 0.036|  1.7 |  G2 |      1
-                      --------------------------------------------------------
-                      | DAL   |-0.02|-0.06|-0.029| -0.1 |  G3 |      5
-                      --------------------------------------------------------
-                      | LULU  |-0.03| 0.05|-0.009|  2.7 |  G1 |      2
-                      --------------------------------------------------------
+          ::
+
+            -------------------------------------------------------------------------
+                       |       |  1D  |  5D  |  10D  | factor| group| factor_quantile
+            -------------------------------------------------------------------------
+                date   | asset |      |      |       |       |      |
+            -------------------------------------------------------------------------
+                       | AAPL  |  0.09| -0.01| -0.079|   0.5 |   G1 |      3
+                       --------------------------------------------------------------
+                       | BA    |  0.02|  0.06|  0.020|  -1.1 |   G2 |      5
+                       --------------------------------------------------------------
+            2014-01-01 | CMG   |  0.03|  0.09|  0.036|   1.7 |   G2 |      1
+                       --------------------------------------------------------------
+                       | DAL   | -0.02| -0.06| -0.029|  -0.1 |   G3 |      5
+                       --------------------------------------------------------------
+                       | LULU  | -0.03|  0.05| -0.009|   2.7 |   G1 |      2
+                       --------------------------------------------------------------
 
     See Also
     --------
-    utils.get_clean_factor
+    :class:`alphalens.utils.get_clean_factor`
         For use when forward returns are already available.
     """
     forward_returns = compute_forward_returns(
