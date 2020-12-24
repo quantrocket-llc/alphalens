@@ -384,9 +384,17 @@ def plot_quantile_returns_bar(mean_ret_by_q,
             ax = ax.flatten()
 
         for a, (sc, cor) in zip(ax, mean_ret_by_q.groupby(level='group')):
-            (cor.xs(sc, level='group')
-                .multiply(DECIMAL_TO_BPS)
-                .plot(kind='bar', title=sc, ax=a))
+
+            xs = cor.xs(sc, level='group')
+
+            # If the group (sector) is empty, just hide the axis (this can
+            # happen when the group level is categorical and there is a
+            # category choice that is not present in the data)
+            if xs.empty:
+                a.set_axis_off()
+                continue
+
+            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=sc, ax=a)
 
             a.set(xlabel='', ylabel='Mean Return (bps)',
                   ylim=(ymin, ymax))
