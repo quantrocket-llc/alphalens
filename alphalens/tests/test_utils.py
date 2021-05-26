@@ -27,7 +27,7 @@ from pandas import (
     Timestamp,
     concat,
 )
-from pandas.util.testing import (assert_frame_equal,
+from pandas.testing import (assert_frame_equal,
                                  assert_series_equal)
 
 from .. utils import (get_clean_factor_and_forward_returns,

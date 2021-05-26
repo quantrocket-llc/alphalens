@@ -16,7 +16,6 @@
 import pandas as pd
 import numpy as np
 import re
-import warnings
 
 from IPython.display import display
 from pandas.tseries.offsets import CustomBusinessDay, Day, BusinessDay
@@ -337,7 +336,20 @@ def compute_forward_returns(factor,
     # now set the columns correctly
     df = df[column_list]
 
-    df.index.levels[0].freq = freq
+    # HACK: setting freq on df.index fails with pandas error:
+    #
+    #   Inferred frequency None from passed values does not conform to passed frequency C
+    #
+    # so temporarily disable the pandas validation
+    def noop(*args, **kwargs):
+        return None
+    orig_validate = pd.core.arrays.datetimelike.DatetimeLikeArrayMixin._validate_frequency
+    pd.core.arrays.datetimelike.DatetimeLikeArrayMixin._validate_frequency = noop
+    try:
+        df.index.levels[0].freq = freq
+    finally:
+        pd.core.arrays.datetimelike.DatetimeLikeArrayMixin._validate_frequency = orig_validate
+
     df.index.set_names(['date', 'asset'], inplace=True)
 
     return df
@@ -913,12 +925,6 @@ def get_forward_returns_columns(columns, require_exact_day_multiple=False):
     if require_exact_day_multiple:
         pattern = re.compile(r"^(\d+([D]))+$", re.IGNORECASE)
         valid_columns = [(pattern.match(col) is not None) for col in columns]
-
-        if sum(valid_columns) < len(valid_columns):
-            warnings.warn(
-                "Skipping return periods that aren't exact multiples"
-                + " of days."
-            )
     else:
         pattern = re.compile(r"^(\d+([Dhms]|ms|us|ns]))+$", re.IGNORECASE)
         valid_columns = [(pattern.match(col) is not None) for col in columns]
@@ -1033,8 +1039,16 @@ def diff_custom_calendar_timedeltas(start, end, freq):
 
     if weekmask is not None and holidays is not None:
         # we prefer this method as it is faster
-        actual_days = np.busday_count(np.array(start).astype('datetime64[D]'),
-                                      np.array(end).astype('datetime64[D]'),
+
+        # np.array doesn't store tz info and warns if you pass one
+        _start, _end = start, end
+        if getattr(_start, "tz"):
+            _start = _start.tz_convert("UTC").tz_localize(None)
+        if getattr(_end, "tz"):
+            _end = _end.tz_convert("UTC").tz_localize(None)
+
+        actual_days = np.busday_count(np.array(_start).astype('datetime64[D]'),
+                                      np.array(_end).astype('datetime64[D]'),
                                       weekmask, holidays)
     else:
         # default, it is slow
