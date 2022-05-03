@@ -911,6 +911,9 @@ def factor_cumulative_returns(factor_data,
             2015-07-17 12:30:00   0.065897
             2015-07-20 09:30:00   0.030957
     """
+    if pd.Timedelta(period) != pd.Timedelta('1D'):
+        raise ValueError("period must be 1D to use this function")
+
     fwd_ret_cols = utils.get_forward_returns_columns(factor_data.columns)
 
     if period not in fwd_ret_cols:
@@ -930,7 +933,7 @@ def factor_cumulative_returns(factor_data,
     returns = \
         factor_returns(portfolio_data, long_short, group_neutral, equal_weight)
 
-    return cumulative_returns(returns[period], period)
+    return cumulative_returns(returns[period])
 
 
 def factor_positions(factor_data,
