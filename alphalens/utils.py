@@ -158,7 +158,7 @@ def quantize_factor(factor_data,
                 return pd.concat([pos_bins, neg_bins]).sort_index()
         except Exception as e:
             if _no_raise:
-                return pd.Series(index=x.index)
+                return pd.Series(index=x.index, dtype="float64")
             raise e
 
     grouper = [factor_data.index.get_level_values('date')]
