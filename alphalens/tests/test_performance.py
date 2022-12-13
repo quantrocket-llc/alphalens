@@ -64,29 +64,31 @@ class PerformanceTestCase(TestCase):
                                   dtype="category")
 
     @parameterized.expand([(factor_data, [4, 3, 2, 1, 1, 2, 3, 4],
-                            False, False,
+                            False, False, 'group',
                             dr,
                             [-1., -1.],
                             ),
                            (factor_data, [1, 2, 3, 4, 4, 3, 2, 1],
-                            False, False,
+                            False, False, 'group',
                             dr,
                             [1., 1.],
                             ),
                            (factor_data, [1, 2, 3, 4, 4, 3, 2, 1],
-                            False, True,
+                            False, True, 'group',
                             MultiIndex.from_product(
                                 [dr,
                                 CategoricalIndex([1, 2])
                                 ], names=['date', 'group']),
                             [1., 1., 1., 1.],
                             ),
-                           (factor_data, [1, 2, 3, 4, 4, 3, 2, 1],
-                            True, True,
+                           (factor_data.rename(
+                                columns={"group": "sector"}
+                           ), [1, 2, 3, 4, 4, 3, 2, 1],
+                            True, True, 'sector',
                             MultiIndex.from_product(
                                 [dr,
                                 CategoricalIndex([1, 2])
-                                ], names=['date', 'group']),
+                                ], names=['date', 'sector']),
                             [1., 1., 1., 1.],
                             )])
     def test_information_coefficient(self,
@@ -94,6 +96,7 @@ class PerformanceTestCase(TestCase):
                                      forward_returns,
                                      group_adjust,
                                      by_group,
+                                     group_name,
                                      expected_ix,
                                      expected_ic_val):
 
@@ -102,7 +105,8 @@ class PerformanceTestCase(TestCase):
 
         ic = factor_information_coefficient(factor_data=factor_data,
                                             group_adjust=group_adjust,
-                                            by_group=by_group)
+                                            by_group=by_group,
+                                            group_name=group_name)
 
         expected_ic_df = DataFrame(index=expected_ix,
                                    columns=Index(['1D'], dtype='object'),
@@ -114,6 +118,7 @@ class PerformanceTestCase(TestCase):
                             [4, 3, 2, 1, 1, 2, 3, 4],
                             False,
                             False,
+                            'group',
                             'D',
                             dr,
                             [-1., -1.]),
@@ -121,6 +126,7 @@ class PerformanceTestCase(TestCase):
                             [1, 2, 3, 4, 4, 3, 2, 1],
                             False,
                             False,
+                            'group',
                             'W',
                             DatetimeIndex(['2015-01-04'],
                                           name='date',
@@ -130,26 +136,29 @@ class PerformanceTestCase(TestCase):
                             [1, 2, 3, 4, 4, 3, 2, 1],
                             False,
                             True,
+                            'group',
                             None,
                             CategoricalIndex([1, 2], name='group'),
                             [1., 1.]),
-                           (factor_data,
+                           (factor_data.rename(columns={'group': 'sector'}),
                             [1, 2, 3, 4, 4, 3, 2, 1],
                             False,
                             True,
+                            'sector',
                             'W',
                             MultiIndex.from_product(
                                 [DatetimeIndex(['2015-01-04'],
                                                name='date',
                                                freq='W-SUN'),
                                  CategoricalIndex([1, 2])
-                                 ], names=['date', 'group']),
+                                 ], names=['date', 'sector']),
                             [1., 1.])])
     def test_mean_information_coefficient(self,
                                           factor_data,
                                           forward_returns,
                                           group_adjust,
                                           by_group,
+                                          group_name,
                                           by_time,
                                           expected_ix,
                                           expected_ic_val):
@@ -160,6 +169,7 @@ class PerformanceTestCase(TestCase):
         ic = mean_information_coefficient(factor_data,
                                           group_adjust=group_adjust,
                                           by_group=by_group,
+                                          group_name=group_name,
                                           by_time=by_time)
         expected_ic_df = DataFrame(index=expected_ix,
                                    columns=Index(['1D'], dtype='object'),
@@ -445,7 +455,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            False, False, False,
+                            False, False, 'group', False,
                             [0.30, 0.40, 0.20, 0.10,
                              0.30, 0.40, -0.20, -0.10,
                              0.375, 0.125, 0.50]),
@@ -455,7 +465,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            True, False, False,
+                            True, False, 'group', False,
                             [0.125, 0.375, -0.125, -0.375,
                              0.20, 0.30, -0.30, -0.20,
                              0.10, -0.50, 0.40]),
@@ -465,7 +475,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            False, True, False,
+                            False, True, 'group', False,
                             [0.30, 0.40, 0.20, 0.10,
                              -0.30, 0.40, -0.20, 0.10,
                              0.20, 0.20, 0.20, 0.30, 0.10]),
@@ -475,7 +485,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            True, True, False,
+                            True, True, 'sector', False,
                             [0.25,  0.25, -0.25, -0.25,
                              0.25, 0.25, -0.25, -0.25,
                              -0.50, nan, 0.50]),
@@ -485,7 +495,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            False, False, True,
+                            False, False, 'group', True,
                             [0.20, 0.20, 0.20, 0.20, 0.20,
                              0.20, 0.20, -0.20, -0.20, 0.20,
                              0.50, 0.50]),
@@ -495,7 +505,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            True, False, True,
+                            True, False, 'group', True,
                             [-0.25, 0.25, -0.25, 0.25,
                              0.25, 0.25, -0.25, -0.25,
                              0., -0.50, 0.50]),
@@ -507,7 +517,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            False, True, True,
+                            False, True, 'group', True,
                             [0.25, 0.25, 0.25, 0.25,
                              -0.25, 0.25, -0.25, 0.25,
                              0.25, 0.50, 0.25,
@@ -520,7 +530,7 @@ class PerformanceTestCase(TestCase):
                             ['A', 'B', 'C', 'D', 'E'],
                             {'A': 'Group1', 'B': 'Group2', 'C': 'Group1',
                              'D': 'Group2', 'E': 'Group1'},
-                            True, True, True,
+                            True, True, 'sector', True,
                             [-0.25, 0.25, 0.25, -0.25,
                              0.25, 0.25, -0.25, -0.25,
                              -0.50, nan, 0.50,
@@ -532,6 +542,7 @@ class PerformanceTestCase(TestCase):
                             groups,
                             demeaned,
                             group_adjust,
+                            group_name,
                             equal_weight,
                             expected_vals):
 
@@ -545,12 +556,17 @@ class PerformanceTestCase(TestCase):
         factor_data = DataFrame()
         factor_data['factor'] = factor
         groups = Series(groups)
-        factor_data['group'] = \
+        factor_data[group_name] = \
             Series(index=factor.index,
                    data=groups[factor.index.get_level_values('asset')].values)
 
         weights = \
-            factor_weights(factor_data, demeaned, group_adjust, equal_weight)
+            factor_weights(
+                factor_data,
+                demeaned=demeaned,
+                group_adjust=group_adjust,
+                group_name=group_name,
+                equal_weight=equal_weight)
 
         expected = Series(data=expected_vals,
                           index=factor_data.index,

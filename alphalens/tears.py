@@ -60,10 +60,10 @@ class GridFigure(object):
 
 @plotting.customize
 def create_summary_tear_sheet(
-    factor_data, long_short=True, group_neutral=False
+    factor_data, long_short=True, group_neutral=False, group_name="group"
 ):
     """
-    Creates a small summary tear sheet with returns, information, and turnover
+    Create a small summary tear sheet with returns, information, and turnover
     analysis.
 
     Parameters
@@ -83,6 +83,9 @@ def create_summary_tear_sheet(
     group_neutral : bool
         Should this computation happen on a group neutral portfolio? if so,
         returns demeaning will occur on the group level.
+
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     """
 
     # Returns Analysis
@@ -91,6 +94,7 @@ def create_summary_tear_sheet(
         by_group=False,
         demeaned=long_short,
         group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_quant_rateret = mean_quant_ret.apply(
@@ -103,6 +107,7 @@ def create_summary_tear_sheet(
         by_group=False,
         demeaned=long_short,
         group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_quant_rateret_bydate = mean_quant_ret_bydate.apply(
@@ -116,7 +121,10 @@ def create_summary_tear_sheet(
     )
 
     alpha_beta = perf.factor_alpha_beta(
-        factor_data, demeaned=long_short, group_adjust=group_neutral
+        factor_data,
+        demeaned=long_short,
+        group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_ret_spread_quant, std_spread_quant = perf.compute_mean_returns_spread(
@@ -180,10 +188,11 @@ def create_summary_tear_sheet(
 
 @plotting.customize
 def create_returns_tear_sheet(
-    factor_data, long_short=True, group_neutral=False, by_group=False
+    factor_data, long_short=True, group_neutral=False, by_group=False,
+    group_name="group"
 ):
     """
-    Creates a tear sheet for returns analysis of a factor.
+    Create a tear sheet for returns analysis of a factor.
 
     Parameters
     ----------
@@ -202,17 +211,21 @@ def create_returns_tear_sheet(
         when factor weighting the portfolio for cumulative returns plots
 
     group_neutral : bool
-        Should this computation happen on a group neutral portfolio? if so,
-        returns demeaning will occur on the group level.
-        Additionally each group will weight the same in cumulative returns
-        plots
+        If True, demean returns on the group level, and weight each group
+        the same in cumulative returns plots.
 
     by_group : bool
         If True, display graphs separately for each group.
+
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     """
 
     factor_returns = perf.factor_returns(
-        factor_data, long_short, group_neutral
+        factor_data,
+        demeaned=long_short,
+        group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
@@ -220,6 +233,7 @@ def create_returns_tear_sheet(
         by_group=False,
         demeaned=long_short,
         group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_quant_rateret = mean_quant_ret.apply(
@@ -232,6 +246,7 @@ def create_returns_tear_sheet(
         by_group=False,
         demeaned=long_short,
         group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_quant_rateret_bydate = mean_quant_ret_bydate.apply(
@@ -245,7 +260,11 @@ def create_returns_tear_sheet(
     )
 
     alpha_beta = perf.factor_alpha_beta(
-        factor_data, factor_returns, long_short, group_neutral
+        factor_data,
+        factor_returns,
+        demeaned=long_short,
+        group_adjust=group_neutral,
+        group_name=group_name
     )
 
     mean_ret_spread_quant, std_spread_quant = perf.compute_mean_returns_spread(
@@ -314,6 +333,8 @@ def create_returns_tear_sheet(
     gf.close()
 
     if by_group:
+        factor_data[group_name] = factor_data[group_name].cat.rename_categories({
+            '': '<blank>'})
         (
             mean_return_quantile_group,
             mean_return_quantile_group_std_err,
@@ -321,6 +342,7 @@ def create_returns_tear_sheet(
             factor_data,
             by_date=False,
             by_group=True,
+            group_name=group_name,
             demeaned=long_short,
             group_adjust=group_neutral,
         )
@@ -332,7 +354,7 @@ def create_returns_tear_sheet(
         )
 
         num_groups = len(
-            mean_quant_rateret_group.index.get_level_values("group").unique()
+            mean_quant_rateret_group.index.get_level_values(group_name).unique()
         )
 
         vertical_sections = 1 + (((num_groups - 1) // 2) + 1)
@@ -344,6 +366,7 @@ def create_returns_tear_sheet(
         plotting.plot_quantile_returns_bar(
             mean_quant_rateret_group,
             by_group=True,
+            group_name=group_name,
             ylim_percentiles=(5, 95),
             ax=ax_quantile_returns_bar_by_group,
         )
@@ -353,10 +376,10 @@ def create_returns_tear_sheet(
 
 @plotting.customize
 def create_information_tear_sheet(
-    factor_data, group_neutral=False, by_group=False
+    factor_data, group_neutral=False, by_group=False, group_name="group"
 ):
     """
-    Creates a tear sheet for information analysis of a factor.
+    Create a tear sheet for information analysis of a factor.
 
     Parameters
     ----------
@@ -372,9 +395,14 @@ def create_information_tear_sheet(
         Demean forward returns by group before computing IC.
     by_group : bool
         If True, display graphs separately for each group.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     """
 
-    ic = perf.factor_information_coefficient(factor_data, group_neutral)
+    ic = perf.factor_information_coefficient(
+        factor_data,
+        group_adjust=group_neutral,
+        group_name=group_name)
 
     plotting.plot_information_table(ic)
 
@@ -397,6 +425,7 @@ def create_information_tear_sheet(
             factor_data,
             group_adjust=group_neutral,
             by_group=False,
+            group_name=group_name,
             by_time="M",
         )
         ax_monthly_ic_heatmap = [gf.next_cell() for x in range(fr_cols)]
@@ -406,10 +435,13 @@ def create_information_tear_sheet(
 
     if by_group:
         mean_group_ic = perf.mean_information_coefficient(
-            factor_data, group_adjust=group_neutral, by_group=True
+            factor_data,
+            group_adjust=group_neutral,
+            by_group=True,
+            group_name=group_name
         )
 
-        plotting.plot_ic_by_group(mean_group_ic, ax=gf.next_row())
+        plotting.plot_ic_by_group(mean_group_ic, group_name=group_name, ax=gf.next_row())
 
     plt.show()
     gf.close()
@@ -418,7 +450,7 @@ def create_information_tear_sheet(
 @plotting.customize
 def create_turnover_tear_sheet(factor_data, turnover_periods=None):
     """
-    Creates a tear sheet for analyzing the turnover properties of a factor.
+    Create a tear sheet for analyzing the turnover properties of a factor.
 
     Parameters
     ----------
@@ -500,10 +532,11 @@ def create_turnover_tear_sheet(factor_data, turnover_periods=None):
 def create_full_tear_sheet(factor_data,
                            long_short=True,
                            group_neutral=False,
-                           by_group=False):
+                           by_group=False,
+                           group_name="group"):
     """
-    Creates a full tear sheet for analysis and evaluating single
-    return predicting (alpha) factor.
+    Create a full tear sheet for analysis and evaluation of a single
+    return-predicting (alpha) factor.
 
     Parameters
     ----------
@@ -522,24 +555,22 @@ def create_full_tear_sheet(factor_data,
           affects returns analysis
 
     group_neutral : bool
-        Should this computation happen on a group neutral portfolio?
-
-        - See :class:`alphalens.tears.create_returns_tear_sheet` for details on how this flag
-          affects returns analysis
-
-        - See :class:`alphalens.tears.create_information_tear_sheet` for details on how this
-          flag affects information analysis
+        If True, demean returns on the group level, and weight each group
+        the same in cumulative returns plots.
 
     by_group : bool
         If True, display graphs separately for each group.
+
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     """
 
     plotting.plot_quantile_statistics_table(factor_data)
     create_returns_tear_sheet(
-        factor_data, long_short, group_neutral, by_group, set_context=False
+        factor_data, long_short, group_neutral, by_group, group_name=group_name, set_context=False
     )
     create_information_tear_sheet(
-        factor_data, group_neutral, by_group, set_context=False
+        factor_data, group_neutral, by_group, group_name=group_name, set_context=False
     )
     create_turnover_tear_sheet(factor_data, set_context=False)
 
@@ -551,9 +582,10 @@ def create_event_returns_tear_sheet(factor_data,
                                     long_short=True,
                                     group_neutral=False,
                                     std_bar=True,
-                                    by_group=False):
+                                    by_group=False,
+                                    group_name="group"):
     """
-    Creates a tear sheet to view the average cumulative returns for a
+    Create a tear sheet to view the average cumulative returns for a
     factor within a window (pre and post event).
 
     Parameters
@@ -588,6 +620,9 @@ def create_event_returns_tear_sheet(factor_data,
 
     by_group : bool
         If True, display graphs separately for each group.
+
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     """
 
     before, after = avgretplot
@@ -599,6 +634,7 @@ def create_event_returns_tear_sheet(factor_data,
         periods_after=after,
         demeaned=long_short,
         group_adjust=group_neutral,
+        group_name=group_name
     )
 
     num_quantiles = int(factor_data["factor_quantile"].max())
@@ -642,10 +678,11 @@ def create_event_returns_tear_sheet(factor_data,
             demeaned=long_short,
             group_adjust=group_neutral,
             by_group=True,
+            group_name=group_name
         )
 
-        for group, avg_cumret in avg_cumret_by_group.groupby(level="group"):
-            avg_cumret.index = avg_cumret.index.droplevel("group")
+        for group, avg_cumret in avg_cumret_by_group.groupby(level=group_name):
+            avg_cumret.index = avg_cumret.index.droplevel(group_name)
             plotting.plot_quantile_average_cumulative_return(
                 avg_cumret,
                 by_quantile=False,
@@ -665,7 +702,7 @@ def create_event_study_tear_sheet(factor_data,
                                   rate_of_ret=True,
                                   n_bars=50):
     """
-    Creates an event study tear sheet for analysis of a specific event.
+    Create an event study tear sheet for analysis of a specific event.
 
     Parameters
     ----------
@@ -718,11 +755,15 @@ def create_event_study_tear_sheet(factor_data,
         )
 
     factor_returns = perf.factor_returns(
-        factor_data, demeaned=False, equal_weight=True
+        factor_data,
+        demeaned=False,
+        equal_weight=True
     )
 
     mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
-        factor_data, by_group=False, demeaned=long_short
+        factor_data,
+        by_group=False,
+        demeaned=long_short
     )
     if rate_of_ret:
         mean_quant_ret = mean_quant_ret.apply(
@@ -730,7 +771,10 @@ def create_event_study_tear_sheet(factor_data,
         )
 
     mean_quant_ret_bydate, std_quant_daily = perf.mean_return_by_quantile(
-        factor_data, by_date=True, by_group=False, demeaned=long_short
+        factor_data,
+        by_date=True,
+        by_group=False,
+        demeaned=long_short
     )
     if rate_of_ret:
         mean_quant_ret_bydate = mean_quant_ret_bydate.apply(

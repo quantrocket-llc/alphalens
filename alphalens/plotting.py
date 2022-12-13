@@ -340,6 +340,7 @@ def plot_ic_qq(ic, theoretical_dist=stats.norm, ax=None):
 
 def plot_quantile_returns_bar(mean_ret_by_q,
                               by_group=False,
+                              group_name="group",
                               ylim_percentiles=None,
                               ax=None):
     """
@@ -351,6 +352,8 @@ def plot_quantile_returns_bar(mean_ret_by_q,
         DataFrame with quantile, (group) and mean period wise return values.
     by_group : bool
         Disaggregated figures by group.
+    group_name : str, optional
+        name of the group column in mean_ret_by_q. Defaults to "group".
     ylim_percentiles : tuple of integers
         Percentiles of observed data to use as y limits for plot.
     ax : matplotlib.Axes, optional
@@ -375,7 +378,7 @@ def plot_quantile_returns_bar(mean_ret_by_q,
 
     if by_group:
         num_group = len(
-            mean_ret_by_q.index.get_level_values('group').unique())
+            mean_ret_by_q.index.get_level_values(group_name).unique())
 
         if ax is None:
             v_spaces = ((num_group - 1) // 2) + 1
@@ -383,18 +386,19 @@ def plot_quantile_returns_bar(mean_ret_by_q,
                                  sharey=True, figsize=(18, 6 * v_spaces))
             ax = ax.flatten()
 
-        for a, (sc, cor) in zip(ax, mean_ret_by_q.groupby(level='group')):
+        for a, (gp, cor) in zip(ax, mean_ret_by_q.groupby(level=group_name)):
 
-            xs = cor.xs(sc, level='group')
+            xs = cor.xs(gp, level=group_name)
 
-            # If the group (sector) is empty, just hide the axis (this can
+            # If the group is empty, just hide the axis (this can
             # happen when the group level is categorical and there is a
             # category choice that is not present in the data)
             if xs.empty:
                 a.set_axis_off()
                 continue
 
-            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=sc, ax=a)
+            title = f"{group_name}: {gp}"
+            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=title, ax=a)
 
             a.set(xlabel='', ylabel='Mean Return (bps)',
                   ylim=(ymin, ymax))
@@ -563,7 +567,7 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
     return ax
 
 
-def plot_ic_by_group(ic_group, ax=None):
+def plot_ic_by_group(ic_group, group_name="group", ax=None):
     """
     Plots Spearman Rank Information Coefficient for a given factor over
     provided forward returns. Separates by group.
@@ -572,6 +576,8 @@ def plot_ic_by_group(ic_group, ax=None):
     ----------
     ic_group : pd.DataFrame
         group-wise mean period wise returns.
+    group_name : str, optional
+        name of the group for the plot title. Defaults to "Group".
     ax : matplotlib.Axes, optional
         Axes upon which to plot.
 
@@ -584,7 +590,7 @@ def plot_ic_by_group(ic_group, ax=None):
         f, ax = plt.subplots(1, 1, figsize=(18, 6))
     ic_group.plot(kind='bar', ax=ax)
 
-    ax.set(title="Information Coefficient By Group", xlabel="")
+    ax.set(title=f"Information Coefficient by {group_name}", xlabel="")
     ax.set_xticklabels(ic_group.index, rotation=45)
 
     return ax

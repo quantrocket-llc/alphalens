@@ -85,6 +85,7 @@ def quantize_factor(factor_data,
                     quantiles=5,
                     bins=None,
                     by_group=False,
+                    group_name="group",
                     no_raise=False,
                     zero_aware=False):
     """
@@ -112,6 +113,8 @@ def quantize_factor(factor_data,
         Only one of 'quantiles' or 'bins' can be not-None
     by_group : bool, optional
         If True, compute quantile buckets separately for each group.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     no_raise: bool, optional
         If True, no exceptions are thrown and the values for which the
         exception would have been thrown are set to np.NaN
@@ -160,7 +163,7 @@ def quantize_factor(factor_data,
 
     grouper = [factor_data.index.get_level_values('date')]
     if by_group:
-        grouper.append('group')
+        grouper.append(group_name)
 
     factor_quantile = factor_data.groupby(grouper)['factor'] \
         .apply(quantile_calc, quantiles, bins, zero_aware, no_raise)
@@ -469,6 +472,7 @@ def get_clean_factor(factor,
                      quantiles=5,
                      bins=None,
                      groupby_labels=None,
+                     group_name="group",
                      max_loss=0.35,
                      zero_aware=False):
     """
@@ -555,6 +559,9 @@ def get_clean_factor(factor,
     groupby_labels : dict
         A dictionary keyed by group code with values corresponding
         to the display name for each group.
+    group_name : str, optional
+        group column name in the resulting DataFrame. Defaults to
+        "group".
     max_loss : float, optional
         Maximum percentage (0.00 to 1.00) of factor data dropping allowed,
         computed comparing the number of items in the input factor index and
@@ -637,7 +644,7 @@ def get_clean_factor(factor,
             groupby = pd.Series(index=groupby.index,
                                 data=sn[groupby.values].values)
 
-        merged_data['group'] = groupby.astype('category')
+        merged_data[group_name] = groupby.astype('category')
 
     merged_data = merged_data.dropna()
 
@@ -648,9 +655,10 @@ def get_clean_factor(factor,
         merged_data,
         quantiles,
         bins,
-        binning_by_group,
-        no_raise,
-        zero_aware
+        by_group=binning_by_group,
+        group_name=group_name,
+        no_raise=no_raise,
+        zero_aware=zero_aware
     )
 
     merged_data['factor_quantile'] = quantile_data
@@ -687,6 +695,7 @@ def get_clean_factor_and_forward_returns(factor,
                                          periods=(1, 5, 10),
                                          filter_zscore=20,
                                          groupby_labels=None,
+                                         group_name="group",
                                          max_loss=0.35,
                                          zero_aware=False,
                                          cumulative_returns=True):
@@ -788,6 +797,9 @@ def get_clean_factor_and_forward_returns(factor,
     groupby_labels : dict
         A dictionary keyed by group code with values corresponding
         to the display name for each group.
+    group_name : str, optional
+        group column name in the resulting DataFrame. Defaults to
+        "group".
     max_loss : float, optional
         Maximum percentage (0.00 to 1.00) of factor data dropping allowed,
         computed comparing the number of items in the input factor index and
@@ -854,6 +866,7 @@ def get_clean_factor_and_forward_returns(factor,
 
     factor_data = get_clean_factor(factor, forward_returns, groupby=groupby,
                                    groupby_labels=groupby_labels,
+                                   group_name=group_name,
                                    quantiles=quantiles, bins=bins,
                                    binning_by_group=binning_by_group,
                                    max_loss=max_loss, zero_aware=zero_aware)

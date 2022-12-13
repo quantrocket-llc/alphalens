@@ -27,7 +27,8 @@ from . import utils
 
 def factor_information_coefficient(factor_data,
                                    group_adjust=False,
-                                   by_group=False):
+                                   by_group=False,
+                                   group_name="group"):
     """
     Computes the Spearman Rank Correlation based Information Coefficient (IC)
     between factor values and N period forward returns for each period in
@@ -45,6 +46,8 @@ def factor_information_coefficient(factor_data,
         Demean forward returns by group before computing IC.
     by_group : bool
         If True, compute period wise IC separately for each group.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
 
     Returns
     -------
@@ -65,9 +68,9 @@ def factor_information_coefficient(factor_data,
 
     if group_adjust:
         factor_data = utils.demean_forward_returns(factor_data,
-                                                   grouper + ['group'])
+                                                   grouper + [group_name])
     if by_group:
-        grouper.append('group')
+        grouper.append(group_name)
 
     ic = factor_data.groupby(grouper).apply(src_ic)
 
@@ -77,6 +80,7 @@ def factor_information_coefficient(factor_data,
 def mean_information_coefficient(factor_data,
                                  group_adjust=False,
                                  by_group=False,
+                                 group_name="group",
                                  by_time=None):
     """
     Get the mean information coefficient of specified groups.
@@ -97,6 +101,8 @@ def mean_information_coefficient(factor_data,
         Demean forward returns by group before computing IC.
     by_group : bool
         If True, take the mean IC for each group.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     by_time : str (pd time_rule), optional
         Time window to use when taking mean IC.
         See http://pandas.pydata.org/pandas-docs/stable/timeseries.html
@@ -109,13 +115,17 @@ def mean_information_coefficient(factor_data,
         forward price movement windows.
     """
 
-    ic = factor_information_coefficient(factor_data, group_adjust, by_group)
+    ic = factor_information_coefficient(
+        factor_data,
+        group_adjust=group_adjust,
+        by_group=by_group,
+        group_name=group_name)
 
     grouper = []
     if by_time is not None:
         grouper.append(pd.Grouper(freq=by_time))
     if by_group:
-        grouper.append('group')
+        grouper.append(group_name)
 
     if len(grouper) == 0:
         ic = ic.mean()
@@ -129,6 +139,7 @@ def mean_information_coefficient(factor_data,
 def factor_weights(factor_data,
                    demeaned=True,
                    group_adjust=False,
+                   group_name="group",
                    equal_weight=False):
     """
     Computes asset weights by factor values and dividing by the sum of their
@@ -154,6 +165,8 @@ def factor_weights(factor_data,
         compute group neutral weights: each group will weight the same and
         if 'demeaned' is enabled the factor values demeaning will occur on the
         group level.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     equal_weight : bool, optional
         if True the assets will be equal-weighted instead of factor-weighted
         If demeaned is True then the factor universe will be split in two
@@ -194,7 +207,7 @@ def factor_weights(factor_data,
 
     grouper = [factor_data.index.get_level_values('date')]
     if group_adjust:
-        grouper.append('group')
+        grouper.append(group_name)
 
     weights = factor_data.groupby(grouper)['factor'] \
         .apply(to_weights, demeaned, equal_weight)
@@ -208,6 +221,7 @@ def factor_weights(factor_data,
 def factor_returns(factor_data,
                    demeaned=True,
                    group_adjust=False,
+                   group_name="group",
                    equal_weight=False,
                    by_asset=False):
     """
@@ -228,6 +242,8 @@ def factor_returns(factor_data,
     group_adjust : bool
         Control how to build factor weights
         -- see performance.factor_weights for a full explanation
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     equal_weight : bool, optional
         Control how to build factor weights
         -- see performance.factor_weights for a full explanation
@@ -241,7 +257,12 @@ def factor_returns(factor_data,
     """
 
     weights = \
-        factor_weights(factor_data, demeaned, group_adjust, equal_weight)
+        factor_weights(
+            factor_data,
+            demeaned=demeaned,
+            group_adjust=group_adjust,
+            group_name=group_name,
+            equal_weight=equal_weight)
 
     weighted_returns = \
         factor_data[utils.get_forward_returns_columns(factor_data.columns)] \
@@ -259,6 +280,7 @@ def factor_alpha_beta(factor_data,
                       returns=None,
                       demeaned=True,
                       group_adjust=False,
+                      group_name="group",
                       equal_weight=False):
     """
     Compute the alpha (excess returns), alpha t-stat (alpha significance),
@@ -275,16 +297,23 @@ def factor_alpha_beta(factor_data,
         each period, the factor quantile/bin that factor value belongs to, and
         (optionally) the group the asset belongs to.
         - See full explanation in utils.get_clean_factor_and_forward_returns
+
     returns : pd.DataFrame, optional
         Period wise factor returns. If this is None then it will be computed
         with 'factor_returns' function and the passed flags: 'demeaned',
         'group_adjust', 'equal_weight'
+
     demeaned : bool
         Control how to build factor returns used for alpha/beta computation
         -- see performance.factor_return for a full explanation
+
     group_adjust : bool
         Control how to build factor returns used for alpha/beta computation
         -- see performance.factor_return for a full explanation
+
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
+
     equal_weight : bool, optional
         Control how to build factor returns used for alpha/beta computation
         -- see performance.factor_return for a full explanation
@@ -298,7 +327,12 @@ def factor_alpha_beta(factor_data,
 
     if returns is None:
         returns = \
-            factor_returns(factor_data, demeaned, group_adjust, equal_weight)
+            factor_returns(
+                factor_data,
+                demeaned=demeaned,
+                group_adjust=group_adjust,
+                group_name=group_name,
+                equal_weight=equal_weight)
 
     universe_ret = factor_data.groupby(level='date')[
         utils.get_forward_returns_columns(factor_data.columns)] \
@@ -453,6 +487,7 @@ def positions(weights, period, freq=None):
 def mean_return_by_quantile(factor_data,
                             by_date=False,
                             by_group=False,
+                            group_name="group",
                             demeaned=True,
                             group_adjust=False):
     """
@@ -471,6 +506,8 @@ def mean_return_by_quantile(factor_data,
         If True, compute quantile bucket returns separately for each date.
     by_group : bool
         If True, compute quantile bucket returns separately for each group.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     demeaned : bool
         Compute demeaned mean returns (long short portfolio)
     group_adjust : bool
@@ -485,7 +522,7 @@ def mean_return_by_quantile(factor_data,
     """
 
     if group_adjust:
-        grouper = [factor_data.index.get_level_values('date')] + ['group']
+        grouper = [factor_data.index.get_level_values('date')] + [group_name]
         factor_data = utils.demean_forward_returns(factor_data, grouper)
     elif demeaned:
         factor_data = utils.demean_forward_returns(factor_data)
@@ -495,7 +532,7 @@ def mean_return_by_quantile(factor_data,
     grouper = ['factor_quantile', factor_data.index.get_level_values('date')]
 
     if by_group:
-        grouper.append('group')
+        grouper.append(group_name)
 
     group_stats = factor_data.groupby(grouper)[
         utils.get_forward_returns_columns(factor_data.columns)] \
@@ -506,7 +543,7 @@ def mean_return_by_quantile(factor_data,
     if not by_date:
         grouper = [mean_ret.index.get_level_values('factor_quantile')]
         if by_group:
-            grouper.append(mean_ret.index.get_level_values('group'))
+            grouper.append(mean_ret.index.get_level_values(group_name))
         group_stats = mean_ret.groupby(grouper)\
             .agg(['mean', 'std', 'count'])
         mean_ret = group_stats.T.xs('mean', level=1).T
@@ -733,7 +770,8 @@ def average_cumulative_return_by_quantile(factor_data,
                                           periods_after=15,
                                           demeaned=True,
                                           group_adjust=False,
-                                          by_group=False):
+                                          by_group=False,
+                                          group_name="group"):
     """
     Plots average cumulative returns by factor quantiles in the period range
     defined by -periods_before to periods_after
@@ -762,6 +800,8 @@ def average_cumulative_return_by_quantile(factor_data,
         neutral portfolio)
     by_group : bool
         If True, compute cumulative returns separately for each group
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
 
     Returns
     -------
@@ -813,7 +853,7 @@ def average_cumulative_return_by_quantile(factor_data,
         #
         returns_bygroup = []
 
-        for group, g_data in factor_data.groupby('group'):
+        for group, g_data in factor_data.groupby(group_name):
             g_fq = g_data['factor_quantile']
             if group_adjust:
                 demean_by = g_fq  # demeans at group level
@@ -830,8 +870,8 @@ def average_cumulative_return_by_quantile(factor_data,
             if len(avgcumret) == 0:
                 continue
 
-            avgcumret['group'] = group
-            avgcumret.set_index('group', append=True, inplace=True)
+            avgcumret[group_name] = group
+            avgcumret.set_index(group_name, append=True, inplace=True)
             returns_bygroup.append(avgcumret)
 
         return pd.concat(returns_bygroup, axis=0)
@@ -845,7 +885,7 @@ def average_cumulative_return_by_quantile(factor_data,
         #
         if group_adjust:
             all_returns = []
-            for group, g_data in factor_data.groupby('group'):
+            for group, g_data in factor_data.groupby(group_name):
                 g_fq = g_data['factor_quantile']
                 avgcumret = g_fq.groupby(g_fq).apply(
                     cumulative_return_around_event, g_fq
@@ -867,6 +907,7 @@ def factor_cumulative_returns(factor_data,
                               period,
                               long_short=True,
                               group_neutral=False,
+                              group_name="group",
                               equal_weight=False,
                               quantiles=None,
                               groups=None):
@@ -891,6 +932,8 @@ def factor_cumulative_returns(factor_data,
     group_neutral : bool, optional
         If True then simulates a group neutral portfolio
         - see performance.create_pyfolio_input for more details
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     equal_weight : bool, optional
         Control the assets weights:
         - see performance.create_pyfolio_input for more details
@@ -928,10 +971,15 @@ def factor_cumulative_returns(factor_data,
             quantiles)]
 
     if groups is not None:
-        portfolio_data = portfolio_data[portfolio_data['group'].isin(groups)]
+        portfolio_data = portfolio_data[portfolio_data[group_name].isin(groups)]
 
     returns = \
-        factor_returns(portfolio_data, long_short, group_neutral, equal_weight)
+        factor_returns(
+            portfolio_data,
+            demeaned=long_short,
+            group_adjust=group_neutral,
+            group_name=group_name,
+            equal_weight=equal_weight)
 
     return cumulative_returns(returns[period])
 
@@ -940,6 +988,7 @@ def factor_positions(factor_data,
                      period,
                      long_short=True,
                      group_neutral=False,
+                     group_name="group",
                      equal_weight=False,
                      quantiles=None,
                      groups=None):
@@ -964,6 +1013,8 @@ def factor_positions(factor_data,
     group_neutral : bool, optional
         If True then simulates a group neutral portfolio
         - see performance.create_pyfolio_input for more details
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     equal_weight : bool, optional
         Control the assets weights:
         - see performance.create_pyfolio_input for more details.
@@ -1000,10 +1051,15 @@ def factor_positions(factor_data,
             quantiles)]
 
     if groups is not None:
-        portfolio_data = portfolio_data[portfolio_data['group'].isin(groups)]
+        portfolio_data = portfolio_data[portfolio_data[group_name].isin(groups)]
 
     weights = \
-        factor_weights(portfolio_data, long_short, group_neutral, equal_weight)
+        factor_weights(
+            portfolio_data,
+            demeaned=long_short,
+            group_neutral=group_neutral,
+            group_name=group_name,
+            equal_weight=equal_weight)
 
     return positions(weights, period)
 
@@ -1013,6 +1069,7 @@ def create_pyfolio_input(factor_data,
                          capital=None,
                          long_short=True,
                          group_neutral=False,
+                         group_name="group",
                          equal_weight=False,
                          quantiles=None,
                          groups=None,
@@ -1056,6 +1113,8 @@ def create_pyfolio_input(factor_data,
         the group level resulting in a dollar neutral, group neutral,
         long-short portfolio.
         If False group information will not be used in weights computation.
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
     equal_weight : bool, optional
         if True the assets will be equal-weighted. If long_short is True then
         the factor universe will be split in two equal sized groups with the
@@ -1111,13 +1170,15 @@ def create_pyfolio_input(factor_data,
     # factor, then resample it at 1 day frequency and finally compute daily
     # returns
     #
-    cumrets = factor_cumulative_returns(factor_data,
-                                        period,
-                                        long_short,
-                                        group_neutral,
-                                        equal_weight,
-                                        quantiles,
-                                        groups)
+    cumrets = factor_cumulative_returns(
+        factor_data,
+        period=period,
+        long_short=long_short,
+        group_neutral=group_neutral,
+        group_name=group_name,
+        equal_weight=equal_weight,
+        quantiles=quantiles,
+        groups=groups)
     cumrets = cumrets.resample('1D').last().fillna(method='ffill')
     returns = cumrets.pct_change().fillna(0)
 
@@ -1126,13 +1187,15 @@ def create_pyfolio_input(factor_data,
     # the positions returned by 'factor_positions' at 1 day frequency and
     # recompute the weights so that the sum of daily weights is 1.0
     #
-    positions = factor_positions(factor_data,
-                                 period,
-                                 long_short,
-                                 group_neutral,
-                                 equal_weight,
-                                 quantiles,
-                                 groups)
+    positions = factor_positions(
+        factor_data,
+        period=period,
+        long_short=long_short,
+        group_neutral=group_neutral,
+        group_name=group_name,
+        equal_weight=equal_weight,
+        quantiles=quantiles,
+        groups=groups)
     positions = positions.resample('1D').sum().fillna(method='ffill')
     positions = positions.div(positions.abs().sum(axis=1), axis=0).fillna(0)
     positions['cash'] = 1. - positions.sum(axis=1)
@@ -1153,11 +1216,12 @@ def create_pyfolio_input(factor_data,
         benchmark_data = factor_data.copy()
         # make sure no negative positions
         benchmark_data['factor'] = benchmark_data['factor'].abs()
-        benchmark_rets = factor_cumulative_returns(benchmark_data,
-                                                   benchmark_period,
-                                                   long_short=False,
-                                                   group_neutral=False,
-                                                   equal_weight=True)
+        benchmark_rets = factor_cumulative_returns(
+            benchmark_data,
+            period=benchmark_period,
+            long_short=False,
+            group_neutral=False,
+            equal_weight=True)
         benchmark_rets = benchmark_rets.resample(
             '1D').last().fillna(method='ffill')
         benchmark_rets = benchmark_rets.pct_change().fillna(0)
