@@ -293,14 +293,6 @@ def create_returns_tear_sheet(
         mean_quant_rateret_bydate, ylim_percentiles=(1, 99), ax=gf.next_row()
     )
 
-    trading_calendar = factor_data.index.levels[0].freq
-    if trading_calendar is None:
-        trading_calendar = pd.tseries.offsets.BDay()
-        warnings.warn(
-            "'freq' not set in factor_data index: assuming business day",
-            UserWarning,
-        )
-
     # Compute cumulative returns from daily simple returns, if '1D'
     # returns are provided.
     if "1D" in factor_returns:
@@ -794,14 +786,6 @@ def create_event_study_tear_sheet(factor_data,
     plotting.plot_quantile_returns_violin(
         mean_quant_ret_bydate, ylim_percentiles=(1, 99), ax=gf.next_row()
     )
-
-    trading_calendar = factor_data.index.levels[0].freq
-    if trading_calendar is None:
-        trading_calendar = pd.tseries.offsets.BDay()
-        warnings.warn(
-            "'freq' not set in factor_data index: assuming business day",
-            UserWarning,
-        )
 
     plt.show()
     gf.close()
