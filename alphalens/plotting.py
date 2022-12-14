@@ -48,7 +48,7 @@ def customize(func):
     return call_w_context
 
 
-def plotting_context(context='notebook', font_scale=1.5, rc=None):
+def plotting_context(context='notebook', font_scale=1.0, rc=None):
     """
     Create alphalens default plotting style context.
 
@@ -558,7 +558,7 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
                         color='steelblue')
 
     ylim = np.nanpercentile(abs(mean_returns_spread_bps.values), 95)
-    ax.set(ylabel='Difference In Quantile Mean Return (bps)',
+    ax.set(ylabel='Mean Return Spread (bps)',
            xlabel='',
            title=title,
            ylim=(-ylim, ylim))
@@ -814,7 +814,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
     ax.set(ylabel='Log Cumulative Returns',
            title='''Cumulative Return by Quantile
-                    ({} Period Forward Return)'''.format(period),
+                    ({} Period Forward Return, Equal Weighted)'''.format(period),
            xlabel='',
            yscale='symlog',
            yticks=np.linspace(ymin, ymax, 5),

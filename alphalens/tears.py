@@ -297,9 +297,9 @@ def create_returns_tear_sheet(
     # returns are provided.
     if "1D" in factor_returns:
         title = (
-            "Factor Weighted "
-            + ("Group Neutral " if group_neutral else "")
-            + ("Long/Short " if long_short else "")
+            "Factor Weighted"
+            + (f", {group_name} Neutral " if group_neutral else "")
+            + (" Long/Short " if long_short else "")
             + "Portfolio Cumulative Return (1D Period)"
         )
 
