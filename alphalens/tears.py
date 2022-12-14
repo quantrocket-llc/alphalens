@@ -349,8 +349,13 @@ def create_returns_tear_sheet(
             mean_quant_rateret_group.index.get_level_values(group_name).unique()
         )
 
-        vertical_sections = 1 + (((num_groups - 1) // 2) + 1)
+        vertical_sections = 2 + (((num_groups - 1) // 2) + 1)
         gf = GridFigure(rows=vertical_sections, cols=2)
+
+        plotting.plot_quantile_composition_by_group(
+            factor_data,
+            group_name=group_name,
+            ax=[gf.next_cell(), gf.next_cell()])
 
         ax_quantile_returns_bar_by_group = [
             gf.next_cell() for _ in range(num_groups)

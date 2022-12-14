@@ -566,6 +566,93 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
 
     return ax
 
+def plot_quantile_composition_by_group(factor_data, group_name="group", ax=None):
+    """
+    Plot pie charts for the top and bottom quantiles, showing the percent composition
+    of each quantile by group.
+
+    Parameters
+    ----------
+    factor_data : pd.Series - MultiIndex
+        A MultiIndex Series indexed by timestamp (level 0) and asset
+        (level 1), containing the values for a single alpha factor.
+
+    group_name : str, optional
+        name of the group column in factor_data. Defaults to "group".
+
+    ax : matplotlib.Axes, optional
+        Axes upon which to plot.
+
+    Returns
+    -------
+    ax : matplotlib.Axes
+        The axes that were plotted on.
+    """
+    group_counts_by_quantile = factor_data.groupby(
+        [factor_data.factor_quantile, factor_data[group_name]]).factor.count()
+
+    idx = group_counts_by_quantile.index.get_level_values("factor_quantile")
+
+    group_counts_bottom_quantile = group_counts_by_quantile.loc[idx[0]]
+    group_counts_top_quantile = group_counts_by_quantile.loc[idx[-1]]
+
+    group_counts_bottom_quantile = group_counts_bottom_quantile / group_counts_bottom_quantile.sum()
+    group_counts_top_quantile = group_counts_top_quantile / group_counts_top_quantile.sum()
+
+    group_counts_bottom_quantile.name = group_counts_top_quantile.name = ""
+
+    if ax is None:
+        f, ax = plt.subplots(1, 2, figsize=(18, 6))
+        ax = ax.flatten()
+
+    def autopct(pct):
+        if pct >= 5:
+            return '%.0f%%' % pct
+        else:
+            return ''
+
+    # the default palette only supports 10 colors; add more colors if needed
+    num_groups = max(
+        [len(group_counts_bottom_quantile[group_counts_bottom_quantile > 0]),
+        len(group_counts_top_quantile[group_counts_top_quantile > 0])])
+
+    color_palette = sns.color_palette()
+    if num_groups > 10:
+        color_palette += sns.color_palette("husl", num_groups-10)
+
+    with color_palette:
+        group_counts_bottom_quantile.plot(
+            kind="pie",
+            title=f"Bottom Quantile Composition by {group_name}",
+            autopct=autopct,
+            labeldistance=None,
+            normalize=True,
+            ax=ax[0])
+
+        ax[0].legend(
+            loc="upper right",
+            bbox_to_anchor=(0, 1),
+            title=group_name)
+
+        group_counts_top_quantile.plot(
+            kind="pie",
+            title=f"Top Quantile Composition by {group_name}",
+            autopct=autopct,
+            labeldistance=None,
+            normalize=True,
+            ax=ax[1])
+
+        # if the top quantile has items the bottom quantile didn't have, show
+        # the top quantile's legend, otherwise let the bottom quantile's legend
+        # serve for both
+        if not group_counts_top_quantile.index.difference(
+            group_counts_bottom_quantile.index).empty:
+            ax[1].legend(
+                loc="upper right",
+                bbox_to_anchor=(0, 1),
+                title=group_name)
+
+        return ax
 
 def plot_ic_by_group(ic_group, group_name="group", ax=None):
     """
