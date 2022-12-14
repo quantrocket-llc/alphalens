@@ -474,6 +474,7 @@ def get_clean_factor(factor,
                      groupby_labels=None,
                      group_name="group",
                      max_loss=0.35,
+                     print_loss=True,
                      zero_aware=False):
     """
     Formats the factor data, forward return data, and group mappings into a
@@ -541,7 +542,7 @@ def get_clean_factor(factor,
     binning_by_group : bool
         If True, compute quantile buckets separately for each group.
         This is useful when the factor values range vary considerably
-        across gorups so that it is wise to make the binning group relative.
+        across groups so that it is wise to make the binning group relative.
         You should probably enable this if the factor is intended
         to be analyzed for a group neutral portfolio
     quantiles : int or sequence[float]
@@ -571,6 +572,9 @@ def get_clean_factor(factor,
         forward returns for all factor values, or because it is not possible
         to perform binning.
         Set max_loss=0 to avoid Exceptions suppression.
+    print_loss : bool, optional
+        Whether to print the percentage of factor data dropped based on max_loss.
+        Default True.
     zero_aware : bool, optional
         If True, compute quantile buckets separately for positive and negative
         signal values. This is useful if your signal is centered and zero is
@@ -671,16 +675,17 @@ def get_clean_factor(factor,
     fwdret_loss = (initial_amount - fwdret_amount) / initial_amount
     bin_loss = tot_loss - fwdret_loss
 
-    print("Dropped %.1f%% entries from factor data: %.1f%% in forward "
-          "returns computation and %.1f%% in binning phase "
-          "(set max_loss=0 to see potentially suppressed Exceptions)." %
-          (tot_loss * 100, fwdret_loss * 100, bin_loss * 100))
+    if print_loss:
+        print("Dropped %.1f%% entries from factor data: %.1f%% in forward "
+            "returns computation and %.1f%% in binning phase "
+            "(set max_loss=0 to see potentially suppressed Exceptions)." %
+            (tot_loss * 100, fwdret_loss * 100, bin_loss * 100))
 
     if tot_loss > max_loss:
-        message = ("max_loss (%.1f%%) exceeded %.1f%%, consider increasing it."
-                   % (max_loss * 100, tot_loss * 100))
+        message = ("total loss (%.1f%%) exceeded max_loss %.1f%%, consider increasing it."
+                   % (tot_loss * 100, max_loss * 100))
         raise MaxLossExceededError(message)
-    else:
+    elif print_loss:
         print("max_loss is %.1f%%, not exceeded: OK!" % (max_loss * 100))
 
     return merged_data
