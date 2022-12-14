@@ -16,7 +16,6 @@
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import pandas as pd
-import warnings
 
 from . import plotting
 from . import performance as perf
@@ -217,9 +216,18 @@ def create_returns_tear_sheet(
     by_group : bool
         If True, display graphs separately for each group.
 
-    group_name : str, optional
-        name of the group column in factor_data. Defaults to "group".
+    group_name : str or list of str, optional
+        name of the group column in factor_data. Defaults to "group". A list
+        of names can be passed to display group-level graphs based on multiple
+        columns.
     """
+    group_names = group_name
+    if not isinstance(group_names, (list, tuple)):
+        group_names = [group_names]
+    group_name = group_names[0] if group_names else "group"
+
+    if group_neutral and len(group_names) > 1:
+        raise ValueError("to use group_neutral, only one group_name can be passed")
 
     factor_returns = perf.factor_returns(
         factor_data,
@@ -325,50 +333,52 @@ def create_returns_tear_sheet(
     gf.close()
 
     if by_group:
-        factor_data[group_name] = factor_data[group_name].cat.rename_categories({
-            '': '<blank>'})
-        (
-            mean_return_quantile_group,
-            mean_return_quantile_group_std_err,
-        ) = perf.mean_return_by_quantile(
-            factor_data,
-            by_date=False,
-            by_group=True,
-            group_name=group_name,
-            demeaned=long_short,
-            group_adjust=group_neutral,
-        )
+        for group_name in group_names:
 
-        mean_quant_rateret_group = mean_return_quantile_group.apply(
-            utils.rate_of_return,
-            axis=0,
-            base_period=mean_return_quantile_group.columns[0],
-        )
+            factor_data[group_name] = factor_data[group_name].cat.rename_categories({
+                '': '<blank>'})
+            (
+                mean_return_quantile_group,
+                mean_return_quantile_group_std_err,
+            ) = perf.mean_return_by_quantile(
+                factor_data,
+                by_date=False,
+                by_group=True,
+                group_name=group_name,
+                demeaned=long_short,
+                group_adjust=group_neutral,
+            )
 
-        num_groups = len(
-            mean_quant_rateret_group.index.get_level_values(group_name).unique()
-        )
+            mean_quant_rateret_group = mean_return_quantile_group.apply(
+                utils.rate_of_return,
+                axis=0,
+                base_period=mean_return_quantile_group.columns[0],
+            )
 
-        vertical_sections = 2 + (((num_groups - 1) // 2) + 1)
-        gf = GridFigure(rows=vertical_sections, cols=2)
+            num_groups = len(
+                mean_quant_rateret_group.index.get_level_values(group_name).unique()
+            )
 
-        plotting.plot_quantile_composition_by_group(
-            factor_data,
-            group_name=group_name,
-            ax=[gf.next_cell(), gf.next_cell()])
+            vertical_sections = 2 + (((num_groups - 1) // 2) + 1)
+            gf = GridFigure(rows=vertical_sections, cols=2)
 
-        ax_quantile_returns_bar_by_group = [
-            gf.next_cell() for _ in range(num_groups)
-        ]
-        plotting.plot_quantile_returns_bar(
-            mean_quant_rateret_group,
-            by_group=True,
-            group_name=group_name,
-            ylim_percentiles=(5, 95),
-            ax=ax_quantile_returns_bar_by_group,
-        )
-        plt.show()
-        gf.close()
+            plotting.plot_quantile_composition_by_group(
+                factor_data,
+                group_name=group_name,
+                ax=[gf.next_cell(), gf.next_cell()])
+
+            ax_quantile_returns_bar_by_group = [
+                gf.next_cell() for _ in range(num_groups)
+            ]
+            plotting.plot_quantile_returns_bar(
+                mean_quant_rateret_group,
+                by_group=True,
+                group_name=group_name,
+                ylim_percentiles=(5, 95),
+                ax=ax_quantile_returns_bar_by_group,
+            )
+            plt.show()
+            gf.close()
 
 
 @plotting.customize
@@ -390,11 +400,23 @@ def create_information_tear_sheet(
 
     group_neutral : bool
         Demean forward returns by group before computing IC.
+
     by_group : bool
         If True, display graphs separately for each group.
-    group_name : str, optional
-        name of the group column in factor_data. Defaults to "group".
+
+    group_name : str or list of str, optional
+        name of the group column in factor_data. Defaults to "group". A list
+        of names can be passed to display group-level graphs based on multiple
+        columns.
     """
+    if not isinstance(group_name, (list, tuple)):
+        group_names = [group_name]
+    else:
+        group_names = group_name
+        group_name = group_names[0] if group_names else "group"
+
+    if group_neutral and len(group_names) > 1:
+        raise ValueError("to use group_neutral, only one group_name can be passed")
 
     ic = perf.factor_information_coefficient(
         factor_data,
@@ -407,6 +429,7 @@ def create_information_tear_sheet(
     fr_cols = len(ic.columns)
     rows_when_wide = ((fr_cols - 1) // columns_wide) + 1
     vertical_sections = fr_cols + 3 * rows_when_wide + 2 * fr_cols
+    vertical_sections += len(group_names) - 1
     gf = GridFigure(rows=vertical_sections, cols=columns_wide)
 
     ax_ic_ts = [gf.next_row() for _ in range(fr_cols)]
@@ -431,14 +454,15 @@ def create_information_tear_sheet(
         )
 
     if by_group:
-        mean_group_ic = perf.mean_information_coefficient(
-            factor_data,
-            group_adjust=group_neutral,
-            by_group=True,
-            group_name=group_name
-        )
+        for group_name in group_names:
+            mean_group_ic = perf.mean_information_coefficient(
+                factor_data,
+                group_adjust=group_neutral,
+                by_group=True,
+                group_name=group_name
+            )
 
-        plotting.plot_ic_by_group(mean_group_ic, group_name=group_name, ax=gf.next_row())
+            plotting.plot_ic_by_group(mean_group_ic, group_name=group_name, ax=gf.next_row())
 
     plt.show()
     gf.close()
@@ -558,8 +582,10 @@ def create_full_tear_sheet(factor_data,
     by_group : bool
         If True, display graphs separately for each group.
 
-    group_name : str, optional
-        name of the group column in factor_data. Defaults to "group".
+    group_name : str or list of str, optional
+        name of the group column in factor_data. Defaults to "group". A list
+        of names can be passed to display group-level graphs based on multiple
+        columns.
     """
 
     plotting.plot_quantile_statistics_table(factor_data)

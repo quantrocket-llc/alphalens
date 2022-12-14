@@ -544,3 +544,62 @@ class UtilsTestCase(TestCase):
 
         inferred_holidays = factor_data.index.levels[0].freq.holidays
         assert sorted(holidays) == sorted(inferred_holidays)
+
+    def test_get_clean_factor_and_forward_returns_with_multiple_groups(self):
+        """
+        Test get_clean_factor_and_forward_returns with multiple groups.
+        """
+        tickers = ['A', 'B', 'C', 'D', 'E', 'F']
+
+        factor_groups = {'A': 1, 'B': 2, 'C': 1, 'D': 2, 'E': 1, 'F': 2}
+
+        price_data = [[1.10**i, 0.50**i, 3.00**i, 0.90**i, 0.50**i, 1.00**i]
+                      for i in range(1, 7)]  # 6 days = 3 + 3 fwd returns
+
+        factor_data = [[3, 4, 2, 1, nan, nan],
+                       [3, nan, nan, 1, 4, 2],
+                       [3, 4, 2, 1, nan, nan]]  # 3 days
+
+        start = '2015-1-11'
+        factor_end = '2015-1-13'
+        price_end = '2015-1-16'  # 3D fwd returns
+
+        price_index = date_range(start=start, end=price_end)
+        price_index.name = 'date'
+        prices = DataFrame(index=price_index, columns=tickers, data=price_data)
+
+        factor_index = date_range(start=start, end=factor_end)
+        factor_index.name = 'date'
+        factor = DataFrame(index=factor_index, columns=tickers,
+                           data=factor_data).stack()
+
+        more_factor_groups = (factor>2).astype(int)
+
+        factor_data = get_clean_factor_and_forward_returns(
+            factor, prices,
+            groupby=[factor_groups, more_factor_groups],
+            group_name=["group1", "size"],
+            quantiles=4,
+            periods=(1, 2, 3))
+
+        expected_idx = factor.index.rename(['date', 'asset'])
+        expected_cols = ['1D', '2D', '3D',
+                         'factor', 'group1', 'size', 'factor_quantile']
+        expected_data = [[0.1,  0.21,  0.331, 3.0, 1, 1, 3],
+                         [-0.5, -0.75, -0.875, 4.0, 2, 1, 4],
+                         [2.0,  8.00, 26.000, 2.0, 1, 0, 2],
+                         [-0.1, -0.19, -0.271, 1.0, 2, 0, 1],
+                         [0.1,  0.21,  0.331, 3.0, 1, 1, 3],
+                         [-0.1, -0.19, -0.271, 1.0, 2, 0, 1],
+                         [-0.5, -0.75, -0.875, 4.0, 1, 1, 4],
+                         [0.0,  0.00,  0.000, 2.0, 2, 0, 2],
+                         [0.1,  0.21,  0.331, 3.0, 1, 1, 3],
+                         [-0.5, -0.75, -0.875, 4.0, 2, 1, 4],
+                         [2.0,  8.00, 26.000, 2.0, 1, 0, 2],
+                         [-0.1, -0.19, -0.271, 1.0, 2, 0, 1]]
+        expected = DataFrame(index=expected_idx,
+                             columns=expected_cols, data=expected_data)
+        expected['group1'] = expected['group1'].astype('category')
+        expected['size'] = expected['size'].astype('category')
+
+        assert_frame_equal(factor_data, expected)

@@ -324,3 +324,52 @@ class TearsTestCase(TestCase):
 
             create_event_study_tear_sheet(
                 factor_data, prices, avgretplot=avgretplot)
+
+    def test_complain_if_group_neutral_and_multiple_groups(self):
+        """
+        Test error handling when requesting group_neutral with multiple groups.
+        """
+
+        factor_data = get_clean_factor_and_forward_returns(
+            self.factor,
+            self.prices,
+            quantiles=4,
+            periods=[1])
+
+        with self.assertRaises(ValueError) as cm:
+            create_full_tear_sheet(
+                factor_data, group_neutral=True, group_name=["group1", "group2"])
+
+        self.assertEqual(
+            str(cm.exception),
+            "to use group_neutral, only one group_name can be passed")
+
+        with self.assertRaises(ValueError) as cm:
+            create_returns_tear_sheet(
+                factor_data, group_neutral=True, group_name=["group1", "group2"])
+
+        self.assertEqual(
+            str(cm.exception),
+            "to use group_neutral, only one group_name can be passed")
+
+    def test_create_full_tear_sheet_with_multiple_groups(self):
+        """
+        Test no exceptions are thrown
+        """
+        prices = self.prices
+        factor = self.factor
+
+        factor_groups_2 = (factor > 2).astype(int)
+
+        factor_data = get_clean_factor_and_forward_returns(
+            factor,
+            prices,
+            groupby=[self.factor_groups, factor_groups_2],
+            group_name=["group1", "groupb"],
+            quantiles=4,
+            periods=[1])
+
+        create_full_tear_sheet(
+            factor_data, long_short=True,
+            group_neutral=False, by_group=True,
+            group_name=["group1", "groupb"])

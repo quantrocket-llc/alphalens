@@ -678,7 +678,7 @@ def plot_ic_by_group(ic_group, group_name="group", ax=None):
     ic_group.plot(kind='bar', ax=ax)
 
     ax.set(title=f"Information Coefficient by {group_name}", xlabel="")
-    ax.set_xticklabels(ic_group.index, rotation=45)
+    ax.set_xticklabels(ic_group.index, rotation=20)
 
     return ax
 

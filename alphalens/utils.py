@@ -533,12 +533,14 @@ def get_clean_factor(factor,
                        | LULU  | -0.03|  0.05| -0.009
                        ------------------------------
 
-    groupby : pd.Series - MultiIndex or dict
+    groupby : MultiIndex pd.Series or dict, or list of MultiIndex pd.Series or dict
         Either A MultiIndex Series indexed by date and asset,
         containing the period wise group codes for each asset, or
         a dict of asset to group mappings. If a dict is passed,
         it is assumed that group mappings are unchanged for the
-        entire time period of the passed factor data.
+        entire time period of the passed factor data. Passing a list of
+        Series or dicts will result in multiple grouping columns in the
+        output data.
     binning_by_group : bool
         If True, compute quantile buckets separately for each group.
         This is useful when the factor values range vary considerably
@@ -557,12 +559,14 @@ def get_clean_factor(factor,
         Chooses the buckets to be evenly spaced according to the values
         themselves. Useful when the factor contains discrete values.
         Only one of 'quantiles' or 'bins' can be not-None
-    groupby_labels : dict
+    groupby_labels : dict or list of dict, optional
         A dictionary keyed by group code with values corresponding
-        to the display name for each group.
-    group_name : str, optional
+        to the display name for each group. If groupby is a list or tuple,
+        groupby_labels must be a list or tuple of the same length.
+    group_name : str or list of str, optional
         group column name in the resulting DataFrame. Defaults to
-        "group".
+        "group". If groupby is a list or tuple, group_name must be a list
+        or tuple of the same length.
     max_loss : float, optional
         Maximum percentage (0.00 to 1.00) of factor data dropping allowed,
         computed comparing the number of items in the input factor index and
@@ -623,32 +627,61 @@ def get_clean_factor(factor,
     merged_data = forward_returns.copy()
     merged_data['factor'] = factor_copy
 
-    if groupby is not None:
-        if isinstance(groupby, dict):
-            diff = set(factor_copy.index.get_level_values(
-                'asset')) - set(groupby.keys())
-            if len(diff) > 0:
-                raise KeyError(
-                    "Assets {} not in group mapping".format(
-                        list(diff)))
+    groupby_series_list = groupby
+    groupby_labels_list = groupby_labels
+    group_names = group_name
+    if groupby_series_list is not None:
 
-            ss = pd.Series(groupby)
-            groupby = pd.Series(index=factor_copy.index,
-                                data=ss[factor_copy.index.get_level_values(
-                                    'asset')].values)
+        if not isinstance(groupby_series_list, (list, tuple)):
+            groupby_series_list = [groupby_series_list]
 
-        if groupby_labels is not None:
-            diff = set(groupby.values) - set(groupby_labels.keys())
-            if len(diff) > 0:
-                raise KeyError(
-                    "groups {} not in passed group names".format(
-                        list(diff)))
+        if not isinstance(groupby_labels_list, (list, tuple)):
+            groupby_labels_list = [groupby_labels_list]
 
-            sn = pd.Series(groupby_labels)
-            groupby = pd.Series(index=groupby.index,
-                                data=sn[groupby.values].values)
+        if any(groupby_labels_list) and len(groupby_labels_list) != len(groupby_series_list):
+            raise ValueError(
+                "groupby_labels, if provided, must be the same length as groupby")
 
-        merged_data[group_name] = groupby.astype('category')
+        if not any(groupby_labels_list):
+            groupby_labels_list = [None] * len(groupby_series_list)
+
+        if not isinstance(group_names, (list, tuple)):
+            group_names = [group_names]
+            if len(group_names) != len(groupby_series_list):
+                raise ValueError(
+                    "group_names must be the same length as groupby")
+
+        if binning_by_group and len(groupby_series_list) > 1:
+            raise ValueError("to use binning_by_group, only one groupby argument can be passed")
+
+        for groupby, groupby_labels, group_name in zip(
+            groupby_series_list, groupby_labels_list, group_names):
+
+            if isinstance(groupby, dict):
+                diff = set(factor_copy.index.get_level_values(
+                    'asset')) - set(groupby.keys())
+                if len(diff) > 0:
+                    raise KeyError(
+                        "Assets {} not in group mapping".format(
+                            list(diff)))
+
+                ss = pd.Series(groupby)
+                groupby = pd.Series(index=factor_copy.index,
+                                    data=ss[factor_copy.index.get_level_values(
+                                        'asset')].values)
+
+            if groupby_labels is not None:
+                diff = set(groupby.values) - set(groupby_labels.keys())
+                if len(diff) > 0:
+                    raise KeyError(
+                        "groups {} not in passed group names".format(
+                            list(diff)))
+
+                sn = pd.Series(groupby_labels)
+                groupby = pd.Series(index=groupby.index,
+                                    data=sn[groupby.values].values)
+
+            merged_data[group_name] = groupby.astype('category')
 
     merged_data = merged_data.dropna()
 
@@ -769,12 +802,14 @@ def get_clean_factor_and_forward_returns(factor,
             2014-01-03  | 607.94| 21.68|  14.36| 53.94 |  29.37 |
             -----------------------------------------------------
 
-    groupby : pd.Series - MultiIndex or dict
+    groupby : MultiIndex pd.Series or dict, or list of MultiIndex pd.Series or dict
         Either A MultiIndex Series indexed by date and asset,
         containing the period wise group codes for each asset, or
         a dict of asset to group mappings. If a dict is passed,
         it is assumed that group mappings are unchanged for the
-        entire time period of the passed factor data.
+        entire time period of the passed factor data. Passing a list of
+        Series or dicts will result in multiple grouping columns in the
+        output data.
     binning_by_group : bool
         If True, compute quantile buckets separately for each group.
         This is useful when the factor values range vary considerably
@@ -799,12 +834,14 @@ def get_clean_factor_and_forward_returns(factor,
         Sets forward returns greater than X standard deviations
         from the the mean to nan. Set it to 'None' to avoid filtering.
         Caution: this outlier filtering incorporates lookahead bias.
-    groupby_labels : dict
+    groupby_labels : dict or list of dict, optional
         A dictionary keyed by group code with values corresponding
-        to the display name for each group.
-    group_name : str, optional
+        to the display name for each group. If groupby is a list or tuple,
+        groupby_labels must be a list or tuple of the same length.
+    group_name : str or list of str, optional
         group column name in the resulting DataFrame. Defaults to
-        "group".
+        "group". If groupby is a list or tuple, group_name must be a list
+        or tuple of the same length.
     max_loss : float, optional
         Maximum percentage (0.00 to 1.00) of factor data dropping allowed,
         computed comparing the number of items in the input factor index and
