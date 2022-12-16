@@ -30,6 +30,14 @@ from . import performance as perf
 
 DECIMAL_TO_BPS = 10000
 
+PANDAS_TABLE_STYLES = [{
+    'selector': 'caption',
+    'props': 'font-size:1.75em; margin-top:30px;'
+}]
+PANDAS_TABLE_FORMAT = dict(
+    precision=3,
+    thousands=",",
+)
 
 def customize(func):
     """
@@ -41,7 +49,6 @@ def customize(func):
         if set_context:
             color_palette = sns.color_palette('colorblind')
             with plotting_context(), axes_style(), color_palette:
-                sns.despine(left=True)
                 return func(*args, **kwargs)
         else:
             return func(*args, **kwargs)
@@ -148,8 +155,10 @@ def plot_returns_table(alpha_beta,
     returns_table.loc["Mean Spread (bps)"] = \
         mean_ret_spread_quantile.mean() * DECIMAL_TO_BPS
 
-    print(f"{long_short} Returns Analysis")
-    utils.print_table(returns_table.apply(lambda x: x.round(3)))
+    utils.print_table(
+        returns_table.apply(lambda x: x.round(3)).style.set_caption(
+            f"{long_short} Returns Analysis"
+        ).format(**PANDAS_TABLE_FORMAT).set_table_styles(PANDAS_TABLE_STYLES, overwrite=False))
 
 
 def plot_turnover_table(autocorrelation_data, quantile_turnover):
@@ -163,8 +172,12 @@ def plot_turnover_table(autocorrelation_data, quantile_turnover):
         auto_corr.loc["Mean Factor Rank Autocorrelation",
                       "{}D".format(period)] = p_data.mean()
 
-    print("Turnover Analysis")
-    utils.print_table(turnover_table.apply(lambda x: x.round(3)))
+    utils.print_table(
+        turnover_table.apply(lambda x: x.round(3)).style.set_caption(
+            "Turnover Analysis"
+        ).format(**PANDAS_TABLE_FORMAT).set_table_styles(
+            PANDAS_TABLE_STYLES, overwrite=False))
+
     utils.print_table(auto_corr.apply(lambda x: x.round(3)))
 
 
@@ -180,8 +193,11 @@ def plot_information_table(ic_data):
     ic_summary_table["IC Skew"] = stats.skew(ic_data)
     ic_summary_table["IC Kurtosis"] = stats.kurtosis(ic_data)
 
-    print("Information Analysis")
-    utils.print_table(ic_summary_table.apply(lambda x: x.round(3)).T)
+    utils.print_table(
+        ic_summary_table.apply(lambda x: x.round(3)).T.style.set_caption(
+            "Information Analysis"
+        ).format(**PANDAS_TABLE_FORMAT).set_table_styles(
+            PANDAS_TABLE_STYLES, overwrite=False))
 
 
 def plot_quantile_statistics_table(factor_data):
@@ -190,8 +206,15 @@ def plot_quantile_statistics_table(factor_data):
     quantile_stats['count %'] = quantile_stats['count'] \
         / quantile_stats['count'].sum() * 100.
 
-    print("Quantiles Statistics")
-    utils.print_table(quantile_stats)
+    quantile_stats.index.rename('Factor Quantile', inplace=True)
+
+    utils.print_table(quantile_stats.style.set_caption(
+        "Factor Distribution").format(
+            formatter={
+                'count %': "{:.1f}%",
+            },
+            **PANDAS_TABLE_FORMAT).set_table_styles(
+                PANDAS_TABLE_STYLES, overwrite=False))
 
 
 def plot_ic_ts(ic, ax=None):
