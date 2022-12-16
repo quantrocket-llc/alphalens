@@ -16,6 +16,7 @@
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 
 from . import plotting
 from . import performance as perf
@@ -143,12 +144,16 @@ def create_summary_tear_sheet(
     plotting.plot_quantile_statistics_table(factor_data)
 
     plotting.plot_returns_table(
-        alpha_beta, mean_quant_rateret, mean_ret_spread_quant
+        alpha_beta,
+        mean_quant_rateret,
+        mean_ret_spread_quant,
+        demeaned=long_short
     )
 
     plotting.plot_quantile_returns_bar(
         mean_quant_rateret,
         by_group=False,
+        demeaned=long_short,
         ylim_percentiles=None,
         ax=gf.next_row(),
     )
@@ -229,12 +234,19 @@ def create_returns_tear_sheet(
     if group_neutral and len(group_names) > 1:
         raise ValueError("to use group_neutral, only one group_name can be passed")
 
-    factor_returns = perf.factor_returns(
+    actual_factor_returns = perf.factor_returns(
         factor_data,
-        demeaned=long_short,
+        demeaned=False,
         group_adjust=group_neutral,
         group_name=group_name
     )
+    demeaned_factor_returns = perf.factor_returns(
+        factor_data,
+        demeaned=True,
+        group_adjust=group_neutral,
+        group_name=group_name
+    )
+    factor_returns = demeaned_factor_returns if long_short else actual_factor_returns
 
     mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
         factor_data,
@@ -248,13 +260,29 @@ def create_returns_tear_sheet(
         utils.rate_of_return, axis=0, base_period=mean_quant_ret.columns[0]
     )
 
-    mean_quant_ret_bydate, std_quant_daily = perf.mean_return_by_quantile(
+    actual_mean_quant_ret_bydate, actual_std_quant_daily = perf.mean_return_by_quantile(
         factor_data,
         by_date=True,
         by_group=False,
-        demeaned=long_short,
+        demeaned=False,
         group_adjust=group_neutral,
         group_name=group_name
+    )
+
+    if long_short:
+        demeaned_mean_quant_ret_bydate, demeaned_std_quant_daily = perf.mean_return_by_quantile(
+            factor_data,
+            by_date=True,
+            by_group=False,
+            demeaned=True,
+            group_adjust=group_neutral,
+            group_name=group_name
+        )
+
+    mean_quant_ret_bydate, std_quant_daily = (
+        (demeaned_mean_quant_ret_bydate, demeaned_std_quant_daily)
+        if long_short else
+        (actual_mean_quant_ret_bydate, actual_std_quant_daily)
     )
 
     mean_quant_rateret_bydate = mean_quant_ret_bydate.apply(
@@ -269,10 +297,7 @@ def create_returns_tear_sheet(
 
     alpha_beta = perf.factor_alpha_beta(
         factor_data,
-        factor_returns,
-        demeaned=long_short,
-        group_adjust=group_neutral,
-        group_name=group_name
+        factor_returns
     )
 
     mean_ret_spread_quant, std_spread_quant = perf.compute_mean_returns_spread(
@@ -284,39 +309,75 @@ def create_returns_tear_sheet(
 
     fr_cols = len(factor_returns.columns)
     vertical_sections = 2 + fr_cols * 3
+    if long_short:
+        vertical_sections += 2
     gf = GridFigure(rows=vertical_sections, cols=1)
 
     plotting.plot_returns_table(
-        alpha_beta, mean_quant_rateret, mean_ret_spread_quant
+        alpha_beta,
+        mean_quant_rateret,
+        mean_ret_spread_quant,
+        demeaned=long_short
     )
 
     plotting.plot_quantile_returns_bar(
         mean_quant_rateret,
         by_group=False,
+        demeaned=long_short,
         ylim_percentiles=None,
         ax=gf.next_row(),
     )
 
     plotting.plot_quantile_returns_violin(
-        mean_quant_rateret_bydate, ylim_percentiles=(1, 99), ax=gf.next_row()
+        mean_quant_rateret_bydate,
+        demeaned=long_short,
+        ylim_percentiles=(1, 99),
+        ax=gf.next_row()
     )
 
     # Compute cumulative returns from daily simple returns, if '1D'
     # returns are provided.
     if "1D" in factor_returns:
+
         title = (
             "Factor Weighted"
-            + (f", {group_name} Neutral " if group_neutral else "")
-            + (" Long/Short " if long_short else "")
-            + "Portfolio Cumulative Return (1D Period)"
+            + (f", {group_name} Neutral" if group_neutral else "")
+            + " %s Portfolio Cumulative Return (1D Period)"
         )
+
+        if long_short:
+
+            plotting.plot_cumulative_returns(
+                demeaned_factor_returns[["1D"]].rename(columns={"1D": "Long/Short"}),
+                period="1D",
+                color=sns.color_palette('colorblind')[3],
+                title=title % "Long/Short",
+                ax=gf.next_row()
+            )
 
         plotting.plot_cumulative_returns(
-            factor_returns["1D"], period="1D", title=title, ax=gf.next_row()
+            actual_factor_returns[["1D"]].rename(columns={"1D": "Long-Only"}),
+            period="1D",
+            color=sns.color_palette('colorblind')[2],
+            title=title % "Long-Only",
+            ax=gf.next_row()
         )
 
+        if long_short:
+            plotting.plot_cumulative_returns_by_quantile(
+                demeaned_mean_quant_ret_bydate["1D"],
+                period="Daily",
+                relative_or_actual="Relative",
+                ax=gf.next_row()
+            )
+
         plotting.plot_cumulative_returns_by_quantile(
-            mean_quant_ret_bydate["1D"], period="1D", ax=gf.next_row()
+            actual_mean_quant_ret_bydate["1D"],
+            period="Daily",
+            # say "Actual" Cumulative Return if there's a "Relative"
+            # plot, but otherwise nothing
+            relative_or_actual="Actual" if long_short else "",
+            ax=gf.next_row()
         )
 
     ax_mean_quantile_returns_spread_ts = [
@@ -374,6 +435,7 @@ def create_returns_tear_sheet(
                 mean_quant_rateret_group,
                 by_group=True,
                 group_name=group_name,
+                demeaned=long_short,
                 ylim_percentiles=(5, 95),
                 ax=ax_quantile_returns_bar_by_group,
             )
@@ -811,11 +873,18 @@ def create_event_study_tear_sheet(factor_data,
     gf = GridFigure(rows=vertical_sections + 1, cols=1)
 
     plotting.plot_quantile_returns_bar(
-        mean_quant_ret, by_group=False, ylim_percentiles=None, ax=gf.next_row()
+        mean_quant_ret,
+        by_group=False,
+        demeaned=long_short,
+        ylim_percentiles=None,
+        ax=gf.next_row()
     )
 
     plotting.plot_quantile_returns_violin(
-        mean_quant_ret_bydate, ylim_percentiles=(1, 99), ax=gf.next_row()
+        mean_quant_ret_bydate,
+        demeaned=long_short,
+        ylim_percentiles=(1, 99),
+        ax=gf.next_row()
     )
 
     plt.show()

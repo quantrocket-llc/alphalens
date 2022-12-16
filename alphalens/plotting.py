@@ -133,17 +133,22 @@ def axes_style(style='darkgrid', rc=None):
 
 def plot_returns_table(alpha_beta,
                        mean_ret_quantile,
-                       mean_ret_spread_quantile):
+                       mean_ret_spread_quantile,
+                       demeaned=True):
+
+    relative = "Relative " if demeaned else ""
+    long_short = "Long/Short" if demeaned else "Long-Only"
+
     returns_table = pd.DataFrame()
     returns_table = returns_table.append(alpha_beta)
-    returns_table.loc["Mean Period Wise Return Top Quantile (bps)"] = \
+    returns_table.loc[f"Mean {relative}Return Top Quantile (bps)"] = \
         mean_ret_quantile.iloc[-1] * DECIMAL_TO_BPS
-    returns_table.loc["Mean Period Wise Return Bottom Quantile (bps)"] = \
+    returns_table.loc[f"Mean {relative}Return Bottom Quantile (bps)"] = \
         mean_ret_quantile.iloc[0] * DECIMAL_TO_BPS
-    returns_table.loc["Mean Period Wise Spread (bps)"] = \
+    returns_table.loc["Mean Spread (bps)"] = \
         mean_ret_spread_quantile.mean() * DECIMAL_TO_BPS
 
-    print("Returns Analysis")
+    print(f"{long_short} Returns Analysis")
     utils.print_table(returns_table.apply(lambda x: x.round(3)))
 
 
@@ -341,6 +346,7 @@ def plot_ic_qq(ic, theoretical_dist=stats.norm, ax=None):
 def plot_quantile_returns_bar(mean_ret_by_q,
                               by_group=False,
                               group_name="group",
+                              demeaned=True,
                               ylim_percentiles=None,
                               ax=None):
     """
@@ -354,6 +360,8 @@ def plot_quantile_returns_bar(mean_ret_by_q,
         Disaggregated figures by group.
     group_name : str, optional
         name of the group column in mean_ret_by_q. Defaults to "group".
+    demeaned : bool
+        whether the data was demeaned
     ylim_percentiles : tuple of integers
         Percentiles of observed data to use as y limits for plot.
     ax : matplotlib.Axes, optional
@@ -364,6 +372,8 @@ def plot_quantile_returns_bar(mean_ret_by_q,
     ax : matplotlib.Axes
         The axes that were plotted on.
     """
+
+    relative = "Relative " if demeaned else ""
 
     mean_ret_by_q = mean_ret_by_q.copy()
 
@@ -400,7 +410,7 @@ def plot_quantile_returns_bar(mean_ret_by_q,
             title = f"{group_name}: {gp}"
             xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=title, ax=a)
 
-            a.set(xlabel='', ylabel='Mean Return (bps)',
+            a.set(xlabel='', ylabel=f'Mean {relative}Return (bps)',
                   ylim=(ymin, ymax))
 
         if num_group < len(ax):
@@ -414,14 +424,15 @@ def plot_quantile_returns_bar(mean_ret_by_q,
 
         (mean_ret_by_q.multiply(DECIMAL_TO_BPS)
             .plot(kind='bar',
-                  title="Mean Period Wise Return By Factor Quantile", ax=ax))
-        ax.set(xlabel='', ylabel='Mean Return (bps)',
+                  title=f"Mean {relative}Return By Factor Quantile", ax=ax))
+        ax.set(xlabel='', ylabel=f'Mean {relative}Return (bps)',
                ylim=(ymin, ymax))
 
         return ax
 
 
 def plot_quantile_returns_violin(return_by_q,
+                                demeaned=True,
                                  ylim_percentiles=None,
                                  ax=None):
     """
@@ -432,6 +443,8 @@ def plot_quantile_returns_violin(return_by_q,
     return_by_q : pd.DataFrame - MultiIndex
         DataFrame with date and quantile as rows MultiIndex,
         forward return windows as columns, returns as values.
+    demeaned : bool
+        whether the data was demeaned
     ylim_percentiles : tuple of integers
         Percentiles of observed data to use as y limits for plot.
     ax : matplotlib.Axes, optional
@@ -442,6 +455,7 @@ def plot_quantile_returns_violin(return_by_q,
     ax : matplotlib.Axes
         The axes that were plotted on.
     """
+    relative = "Relative " if demeaned else ""
 
     return_by_q = return_by_q.copy()
 
@@ -472,8 +486,8 @@ def plot_quantile_returns_violin(return_by_q,
                    cut=0,
                    inner='quartile',
                    ax=ax)
-    ax.set(xlabel='', ylabel='Return (bps)',
-           title="Period Wise Return By Factor Quantile",
+    ax.set(xlabel='', ylabel=f'{relative}Return (bps)',
+           title=f"{relative}Return By Factor Quantile",
            ylim=(ymin, ymax))
 
     ax.axhline(0.0, linestyle='-', color='black', lw=0.7, alpha=0.6)
@@ -814,7 +828,7 @@ def plot_monthly_ic_heatmap(mean_monthly_ic, ax=None):
 
 def plot_cumulative_returns(factor_returns,
                             period,
-                            freq=None,
+                            color=None,
                             title=None,
                             ax=None):
     """
@@ -829,11 +843,6 @@ def plot_cumulative_returns(factor_returns,
         Length of period for which the returns are computed (e.g. 1 day)
         if 'period' is a string it must follow pandas.Timedelta constructor
         format (e.g. '1 days', '1D', '30m', '3h', '1D1h', etc)
-    freq : pandas DateOffset
-        Used to specify a particular trading calendar e.g. BusinessDay or Day
-        Usually this is inferred from utils.infer_trading_calendar, which is
-        called by either get_clean_factor_and_forward_returns or
-        compute_forward_returns
     title: string, optional
         Custom title
     ax : matplotlib.Axes, optional
@@ -849,7 +858,7 @@ def plot_cumulative_returns(factor_returns,
 
     factor_returns = perf.cumulative_returns(factor_returns)
 
-    factor_returns.plot(ax=ax, lw=3, color='forestgreen', alpha=0.6)
+    factor_returns.plot(ax=ax, lw=3, color=color, alpha=0.6)
     ax.set(ylabel='Cumulative Returns',
            title=("Portfolio Cumulative Return ({} Fwd Period)".format(period)
                   if title is None else title),
@@ -860,8 +869,8 @@ def plot_cumulative_returns(factor_returns,
 
 
 def plot_cumulative_returns_by_quantile(quantile_returns,
-                                        period,
-                                        freq=None,
+                                        period=None,
+                                        relative_or_actual="Relative",
                                         ax=None):
     """
     Plots the cumulative returns of various factor quantiles.
@@ -874,11 +883,8 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
         Length of period for which the returns are computed (e.g. 1 day)
         if 'period' is a string it must follow pandas.Timedelta constructor
         format (e.g. '1 days', '1D', '30m', '3h', '1D1h', etc)
-    freq : pandas DateOffset
-        Used to specify a particular trading calendar e.g. BusinessDay or Day
-        Usually this is inferred from utils.infer_trading_calendar, which is
-        called by either get_clean_factor_and_forward_returns or
-        compute_forward_returns
+    relative_or_actual : str
+        label for type of cumulative returns, usually "Relative" or "Actual"
     ax : matplotlib.Axes, optional
         Axes upon which to plot.
 
@@ -886,6 +892,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     -------
     ax : matplotlib.Axes
     """
+    relative_or_actual = relative_or_actual + " " if relative_or_actual else ""
 
     if ax is None:
         f, ax = plt.subplots(1, 1, figsize=(18, 6))
@@ -900,8 +907,8 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ax.legend()
     ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
     ax.set(ylabel='Log Cumulative Returns',
-           title='''Cumulative Return by Quantile
-                    ({} Period Forward Return, Equal Weighted)'''.format(period),
+           title=f'''{relative_or_actual} Cumulative Return by Quantile
+                    ({period} Period, Equal Weighted Quantiles)''',
            xlabel='',
            yscale='symlog',
            yticks=np.linspace(ymin, ymax, 5),

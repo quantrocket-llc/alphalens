@@ -582,8 +582,8 @@ def get_clean_factor(factor,
     zero_aware : bool, optional
         If True, compute quantile buckets separately for positive and negative
         signal values. This is useful if your signal is centered and zero is
-        the separation between long and short signals, respectively.
-        'quantiles' is None.
+        the separation between long and short signals, respectively. Default
+        False.
 
     Returns
     -------
@@ -854,7 +854,8 @@ def get_clean_factor_and_forward_returns(factor,
     zero_aware : bool, optional
         If True, compute quantile buckets separately for positive and negative
         signal values. This is useful if your signal is centered and zero is
-        the separation between long and short signals, respectively.
+        the separation between long and short signals, respectively. Default
+        False.
     cumulative_returns : bool, optional
         If True, forward returns columns will contain cumulative returns.
         Setting this to False is useful if you want to analyze how predictive
