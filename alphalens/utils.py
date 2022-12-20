@@ -715,8 +715,23 @@ def get_clean_factor(factor,
             (tot_loss * 100, fwdret_loss * 100, bin_loss * 100))
 
     if tot_loss > max_loss:
-        message = ("total loss (%.1f%%) exceeded max_loss %.1f%%, consider increasing it."
-                   % (tot_loss * 100, max_loss * 100))
+        message = (
+            f"{round(tot_loss * 100, 1)}% of factor data had to be dropped, which exceeds "
+            f"the allowed max_loss of {round(max_loss * 100, 1)}%. Of the total loss, "
+            f"{round(fwdret_loss * 100, 1)}% of factor data was dropped during forward "
+            f"returns computation (meaning there wasn't enough price data to compute "
+            f"forward returns) and {round(bin_loss * 100, 1)}% of factor data was dropped "
+            f"during the binning phase (meaning factor data couldn't be grouped into bins, "
+            f"possibly because there were too many non-unique values). You can increase "
+            f"max_loss to something higher than {round(tot_loss, 2)} if you are comfortable "
+            f"with the amount of dropped factor data. If there is substantial data loss in the "
+            f"binning phase, you can set max_loss=0 to see the underlying pandas exception, "
+            f"which may suggest workarounds.")
+        if quantiles:
+            message += (
+                " For example, you may need to use 'bins' instead of 'quantiles' if there are "
+                "too many non-unique values."
+                )
         raise MaxLossExceededError(message)
     elif print_loss:
         print("max_loss is %.1f%%, not exceeded: OK!" % (max_loss * 100))
