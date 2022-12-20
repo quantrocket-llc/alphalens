@@ -366,14 +366,14 @@ def create_returns_tear_sheet(
         if long_short:
             plotting.plot_cumulative_returns_by_quantile(
                 demeaned_mean_quant_ret_bydate["1D"],
-                period="Daily",
+                period="1D",
                 relative_or_actual="Relative",
                 ax=gf.next_row()
             )
 
         plotting.plot_cumulative_returns_by_quantile(
             actual_mean_quant_ret_bydate["1D"],
-            period="Daily",
+            period="1D",
             # say "Actual" Cumulative Return if there's a "Relative"
             # plot, but otherwise nothing
             relative_or_actual="Actual" if long_short else "",
@@ -396,8 +396,9 @@ def create_returns_tear_sheet(
     if by_group:
         for group_name in group_names:
 
-            factor_data[group_name] = factor_data[group_name].cat.rename_categories({
-                '': '<blank>'})
+            if group_name in factor_data.select_dtypes("category").columns:
+                factor_data[group_name] = factor_data[group_name].cat.rename_categories({
+                    '': '<blank>'})
             (
                 mean_return_quantile_group,
                 mean_return_quantile_group_std_err,

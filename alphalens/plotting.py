@@ -595,10 +595,14 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
                         color='steelblue')
 
     ylim = np.nanpercentile(abs(mean_returns_spread_bps.values), 95)
+    if ylim == 0:
+        bounds = (-0.2, 0.2)
+    else:
+        bounds = (-ylim, ylim)
     ax.set(ylabel='Mean Return Spread (bps)',
            xlabel='',
            title=title,
-           ylim=(-ylim, ylim))
+           ylim=bounds)
     ax.axhline(0.0, linestyle='-', color='black', lw=1, alpha=0.8)
 
     return ax
@@ -930,8 +934,9 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ax.legend()
     ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
     ax.set(ylabel='Log Cumulative Returns',
-           title=f'''{relative_or_actual} Cumulative Return by Quantile
-                    ({period} Period, Equal Weighted Quantiles)''',
+           title=(
+            f"{relative_or_actual}Cumulative Return by Quantile "
+            f"({period} Period, Equal Weighted Quantiles)"),
            xlabel='',
            yscale='symlog',
            yticks=np.linspace(ymin, ymax, 5),
