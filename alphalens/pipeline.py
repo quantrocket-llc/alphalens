@@ -59,7 +59,7 @@ def from_pipeline(
 
     Parameters
     ----------
-    pipeline : zipline.pipeline.Pipeline, required
+    pipeline : `Pipeline`, required
         The pipeline to run.
 
     start_date : str (YYYY-MM-DD), required
@@ -151,28 +151,28 @@ def from_pipeline(
     Create a tear sheet from a Pipeline that calculates 1-year momentum, grouping
     by sector and running in 1-year segments to reduce memory usage:
 
-        from zipline.pipeline import Pipeline
-        from zipline.pipeline.factors import Returns
-        from zipline.pipeline.data import master
-        import alphalens as al
+    >>> from zipline.pipeline import Pipeline                                                 # doctest: +SKIP
+    >>> from zipline.pipeline.factors import Returns                                          # doctest: +SKIP
+    >>> from zipline.pipeline.data import master                                              # doctest: +SKIP
+    >>> import alphalens as al                                                                # doctest: +SKIP
 
-        pipeline = Pipeline(
-            columns={
-                "momentum": Returns(window_length=252),
-                "sector": master.SecuritiesMaster.usstock_Sector.latest
-            }
-        )
+    >>> pipeline = Pipeline(                                                                  # doctest: +SKIP
+    ...     columns={                                                                         # doctest: +SKIP
+    ...         "momentum": Returns(window_length=252),                                       # doctest: +SKIP
+    ...         "sector": master.SecuritiesMaster.usstock_Sector.latest                       # doctest: +SKIP
+    ...     }                                                                                 # doctest: +SKIP
+    ... )                                                                                     # doctest: +SKIP
 
-        al.from_pipeline(
-            pipeline,
-            start_date="2010-01-01",
-            end_date="2022-12-31",
-            periods=[1, 5, 21],
-            factor="momentum",
-            quantiles=5,
-            groupby="sector",
-            segment="Y"
-        )
+    >>> al.from_pipeline(                                                                     # doctest: +SKIP
+    ...     pipeline,                                                                         # doctest: +SKIP
+    ...     start_date="2010-01-01",                                                          # doctest: +SKIP
+    ...     end_date="2022-12-31",                                                            # doctest: +SKIP
+    ...     periods=[1, 5, 21],                                                               # doctest: +SKIP
+    ...     factor="momentum",                                                                # doctest: +SKIP
+    ...     quantiles=5,                                                                      # doctest: +SKIP
+    ...     groupby="sector",                                                                 # doctest: +SKIP
+    ...     segment="Y"                                                                       # doctest: +SKIP
+    ... )                                                                                     # doctest: +SKIP
     """
     if not zipline_installed:
         raise ImportError("zipline must be installed to use this function")
