@@ -203,6 +203,10 @@ def plot_information_table(ic_data):
 def plot_quantile_statistics_table(factor_data):
     quantile_stats = factor_data.groupby('factor_quantile') \
         .agg(['min', 'max', 'mean', 'std', 'count'])['factor']
+    daily_counts = factor_data.groupby(
+        ['factor_quantile', factor_data.index.get_level_values("date")]).factor.count()
+    quantile_stats['avg daily count'] = daily_counts.groupby(
+        daily_counts.index.get_level_values("factor_quantile")).mean()
     quantile_stats['count %'] = quantile_stats['count'] \
         / quantile_stats['count'].sum() * 100.
 
@@ -212,6 +216,7 @@ def plot_quantile_statistics_table(factor_data):
         "Factor Distribution").format(
             formatter={
                 'count %': "{:.1f}%",
+                'avg daily count': "{:.1f}"
             },
             **PANDAS_TABLE_FORMAT).set_table_styles(
                 PANDAS_TABLE_STYLES, overwrite=False))
