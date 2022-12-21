@@ -898,6 +898,7 @@ def plot_cumulative_returns(factor_returns,
 def plot_cumulative_returns_by_quantile(quantile_returns,
                                         period=None,
                                         relative_or_actual="Relative",
+                                        group_neutral_name=None,
                                         ax=None):
     """
     Plots the cumulative returns of various factor quantiles.
@@ -912,6 +913,8 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
         format (e.g. '1 days', '1D', '30m', '3h', '1D1h', etc)
     relative_or_actual : str
         label for type of cumulative returns, usually "Relative" or "Actual"
+    group_neutral_name : str
+        group name for label if returns are group neutral
     ax : matplotlib.Axes, optional
         Axes upon which to plot.
 
@@ -920,6 +923,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ax : matplotlib.Axes
     """
     relative_or_actual = relative_or_actual + " " if relative_or_actual else ""
+    weighting = f"{group_neutral_name}-Neutral" if group_neutral_name else "Equal-Weighted"
 
     if ax is None:
         f, ax = plt.subplots(1, 1, figsize=(18, 6))
@@ -936,7 +940,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ax.set(ylabel='Log Cumulative Returns',
            title=(
             f"{relative_or_actual}Cumulative Return by Quantile "
-            f"({period} Period, Equal Weighted Quantiles)"),
+            f"({period} Period, {weighting} Quantiles)"),
            xlabel='',
            yscale='symlog',
            yticks=np.linspace(ymin, ymax, 5),

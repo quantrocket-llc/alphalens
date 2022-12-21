@@ -265,8 +265,7 @@ def create_returns_tear_sheet(
         by_date=True,
         by_group=False,
         demeaned=False,
-        group_adjust=group_neutral,
-        group_name=group_name
+        group_adjust=False
     )
 
     if long_short:
@@ -340,8 +339,8 @@ def create_returns_tear_sheet(
     if "1D" in factor_returns:
 
         title = (
-            "Factor Weighted"
-            + (f", {group_name} Neutral" if group_neutral else "")
+            "Factor-Weighted"
+            + (f", {group_name}-Neutral," if group_neutral else "")
             + " %s Portfolio Cumulative Return (1D Period)"
         )
 
@@ -368,6 +367,7 @@ def create_returns_tear_sheet(
                 demeaned_mean_quant_ret_bydate["1D"],
                 period="1D",
                 relative_or_actual="Relative",
+                group_neutral_name=group_name if group_neutral else None,
                 ax=gf.next_row()
             )
 
