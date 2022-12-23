@@ -691,8 +691,8 @@ def plot_quantile_composition_by_group(factor_data, group_name="group", ax=None)
         # if the top quantile has items the bottom quantile didn't have, show
         # the top quantile's legend, otherwise let the bottom quantile's legend
         # serve for both
-        if not group_counts_top_quantile.index.difference(
-            group_counts_bottom_quantile.index).empty:
+        if not group_counts_top_quantile[group_counts_top_quantile>0].index.difference(
+            group_counts_bottom_quantile[group_counts_bottom_quantile>0].index).empty:
             ax[1].legend(
                 loc="upper right",
                 bbox_to_anchor=(0, 1),
