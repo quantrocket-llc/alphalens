@@ -52,21 +52,25 @@ def non_unique_bin_edges_error(func):
     """
     message = """
 
-    An error occurred while computing bins/quantiles on the input provided.
-    This usually happens when the input contains too many identical
-    values and they span more than one quantile. The quantiles are choosen
-    to have the same number of records each, but the same value cannot span
-    multiple quantiles. Possible workarounds are:
-    1 - Decrease the number of quantiles
-    2 - Specify a custom quantiles range, e.g. [0, .50, .75, 1.] to get unequal
-        number of records per quantile
-    3 - Use 'bins' option instead of 'quantiles', 'bins' chooses the
-        buckets to be evenly spaced according to the values themselves, while
-        'quantiles' forces the buckets to have the same number of records.
-    4 - for factors with discrete values use the 'bins' option with custom
-        ranges and create a range for each discrete value
-    Please see :class:`alphalens.utils.get_clean_factor_and_forward_returns` documentation for
-    full documentation of 'bins' and 'quantiles' options.
+----------------------
+Alphalens explanation:
+----------------------
+
+The above pandas error occurred while computing bins/quantiles on the
+input provided. This usually happens when the input contains too many
+identical values and they span more than one quantile. The quantiles
+are chosen to have the same number of records each, but the same value
+cannot span multiple quantiles. Possible workarounds are:
+1 - Decrease the number of quantiles
+2 - Specify a custom quantiles range, e.g. [0, .50, .75, 1.] to get unequal
+    number of records per quantile
+3 - Use 'bins' option instead of 'quantiles', 'bins' chooses the
+    buckets to be evenly spaced according to the values themselves, while
+    'quantiles' forces the buckets to have the same number of records.
+4 - for factors with discrete values use the 'bins' option with custom
+    ranges and create a range for each discrete value
+Please see :class:`alphalens.utils.get_clean_factor` documentation for
+full documentation of 'bins' and 'quantiles' options.
 
 """
 
@@ -700,9 +704,7 @@ def get_clean_factor(factor,
 
     merged_data['factor_quantile'] = quantile_data
 
-    merged_data = merged_data.dropna()
-
-    binning_amount = float(len(merged_data.index))
+    binning_amount = float(len(merged_data.dropna().index))
 
     tot_loss = (initial_amount - binning_amount) / initial_amount
     fwdret_loss = (initial_amount - fwdret_amount) / initial_amount
@@ -715,26 +717,53 @@ def get_clean_factor(factor,
             (tot_loss * 100, fwdret_loss * 100, bin_loss * 100))
 
     if tot_loss > max_loss:
-        message = (
-            f"{round(tot_loss * 100, 1)}% of factor data had to be dropped, which exceeds "
-            f"the allowed max_loss of {round(max_loss * 100, 1)}%. Of the total loss, "
-            f"{round(fwdret_loss * 100, 1)}% of factor data was dropped during forward "
-            f"returns computation (meaning there wasn't enough price data to compute "
-            f"forward returns) and {round(bin_loss * 100, 1)}% of factor data was dropped "
-            f"during the binning phase (meaning factor data couldn't be grouped into bins, "
-            f"possibly because there were too many non-unique values). You can increase "
-            f"max_loss to something higher than {round(tot_loss, 2)} if you are comfortable "
-            f"with the amount of dropped factor data. If there is substantial data loss in the "
-            f"binning phase, you can set max_loss=0 to see the underlying pandas exception, "
-            f"which may suggest workarounds.")
-        if quantiles:
-            message += (
-                " For example, you may need to use 'bins' instead of 'quantiles' if there are "
-                "too many non-unique values."
+
+        dates = factor_copy.index.get_level_values("date")
+        start_date, end_date = dates.min().date(), dates.max().date()
+        message = f"""
+{round(tot_loss * 100, 1)}% of factor data had to be dropped for date range {start_date} to {end_date},
+which exceeds the allowed max_loss of {round(max_loss * 100, 1)}%. Of the total loss:
+
+* {round(fwdret_loss * 100, 1)}% of factor data was dropped during forward returns computation
+  (this kind of data loss occurs when there isn't enough price data to
+  compute forward returns)
+* {round(bin_loss * 100, 1)}% of factor data was dropped during the binning phase (this kind of
+  data loss occurs when factor data can't be grouped into bins, often because
+  there are too many non-unique values).
+
+You can increase max_loss to something higher than {round(tot_loss, 2)} if you are
+comfortable with the amount of dropped factor data. Data loss in the forward
+returns computation can be addressed by changing the date range, shortening
+the forward returns period length, or collecting more data."""
+        if bin_loss:
+
+            try:
+                quantize_factor(
+                    merged_data,
+                    quantiles,
+                    bins,
+                    by_group=binning_by_group,
+                    group_name=group_name,
+                    no_raise=False,
+                    zero_aware=zero_aware
                 )
+            except ValueError as e:
+                message += f""" Data loss during
+the binning phase is further explained below:
+
+----------------------
+Pandas error message:
+----------------------
+
+{str(e)}
+"""
         raise MaxLossExceededError(message)
     elif print_loss:
         print("max_loss is %.1f%%, not exceeded: OK!" % (max_loss * 100))
+
+    # We don't dropna until now, in case we needed to re-run quantize_factor for the
+    # MaxLossExceededError message
+    merged_data = merged_data.dropna()
 
     return merged_data
 

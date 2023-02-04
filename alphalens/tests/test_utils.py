@@ -32,7 +32,8 @@ from pandas.testing import (assert_frame_equal,
 
 from .. utils import (get_clean_factor_and_forward_returns,
                       compute_forward_returns,
-                      quantize_factor)
+                      quantize_factor,
+                      MaxLossExceededError)
 
 
 class UtilsTestCase(TestCase):
@@ -184,6 +185,96 @@ class UtilsTestCase(TestCase):
                           data=expected_vals,
                           name='factor_quantile').dropna()
         assert_series_equal(quantized_factor, expected)
+
+    def test_max_loss_exceeded_error_message(self):
+        """
+        Test MaxLossExceededError error message.
+        """
+        tickers = ['A', 'B', 'C', 'D', 'E', 'F']
+
+        factor_groups = {'A': 1, 'B': 2, 'C': 1, 'D': 2, 'E': 1, 'F': 2}
+
+        price_data = [[1.10**i, 0.50**i, 3.00**i, 0.90**i, 0.50**i, 1.00**i]
+                      for i in range(1, 7)]  # 6 days = 3 + 3 fwd returns
+
+        factor_data = [[3, 3, 2, 1, nan, nan],
+                       [3, nan, nan, 1, 3, 2],
+                       [3, 3, 2, 1, nan, nan]]  # 3 days
+
+        start = '2015-1-11'
+        factor_end = '2015-1-13'
+        price_end = '2015-1-16'  # 3D fwd returns
+
+        price_index = date_range(start=start, end=price_end)
+        price_index.name = 'date'
+        prices = DataFrame(index=price_index, columns=tickers, data=price_data)
+
+        factor_index = date_range(start=start, end=factor_end)
+        factor_index.name = 'date'
+        factor = DataFrame(index=factor_index, columns=tickers,
+                           data=factor_data).stack()
+
+        # with 4 quantiles, the error occurs b/c there are only 3 unique
+        # values
+        with self.assertRaises(MaxLossExceededError) as cm:
+            get_clean_factor_and_forward_returns(
+                factor, prices,
+                groupby=factor_groups,
+                quantiles=4,
+                periods=(1, 2, 3))
+
+        expected = \
+"""100.0% of factor data had to be dropped for date range 2015-01-11 to 2015-01-13,
+which exceeds the allowed max_loss of 35.0%. Of the total loss:
+
+* 0.0% of factor data was dropped during forward returns computation
+  (this kind of data loss occurs when there isn't enough price data to
+  compute forward returns)
+* 100.0% of factor data was dropped during the binning phase (this kind of
+  data loss occurs when factor data can't be grouped into bins, often because
+  there are too many non-unique values).
+
+You can increase max_loss to something higher than 1.0 if you are
+comfortable with the amount of dropped factor data. Data loss in the forward
+returns computation can be addressed by changing the date range, shortening
+the forward returns period length, or collecting more data. Data loss during
+the binning phase is further explained below:
+
+----------------------
+Pandas error message:
+----------------------
+
+Bin edges must be unique: array([1.  , 1.75, 2.5 , 3.  , 3.  ]).
+You can drop duplicate edges by setting the 'duplicates' kwarg
+
+----------------------
+Alphalens explanation:
+----------------------
+
+The above pandas error occurred while computing bins/quantiles on the
+input provided. This usually happens when the input contains too many
+identical values and they span more than one quantile. The quantiles
+are chosen to have the same number of records each, but the same value
+cannot span multiple quantiles. Possible workarounds are:
+1 - Decrease the number of quantiles
+2 - Specify a custom quantiles range, e.g. [0, .50, .75, 1.] to get unequal
+    number of records per quantile
+3 - Use 'bins' option instead of 'quantiles', 'bins' chooses the
+    buckets to be evenly spaced according to the values themselves, while
+    'quantiles' forces the buckets to have the same number of records.
+4 - for factors with discrete values use the 'bins' option with custom
+    ranges and create a range for each discrete value
+Please see :class:`alphalens.utils.get_clean_factor` documentation for
+full documentation of 'bins' and 'quantiles' options."""
+        self.assertEqual(str(cm.exception).strip(), expected)
+
+        # with only 3 quantiles, it's okay
+        with self.assertRaises(MaxLossExceededError) as cm:
+            get_clean_factor_and_forward_returns(
+                factor, prices,
+                groupby=factor_groups,
+                quantiles=3,
+                periods=(1, 2, 3))
 
     def test_get_clean_factor_and_forward_returns_1(self):
         """
