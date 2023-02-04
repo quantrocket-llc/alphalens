@@ -16,6 +16,7 @@
 import pandas as pd
 from IPython.display import clear_output
 try:
+    from zipline.pipeline import Pipeline
     from zipline.research import run_pipeline, get_forward_returns
     zipline_installed = True
 except ImportError:
@@ -213,6 +214,19 @@ def from_pipeline(
         quantiles = 5
 
     if segment:
+
+        # immediately validate the end_date to catch RequestedEndDateAfterBundleEndDate
+        # without having to wait for all the previous segments to finish
+        factor_data = run_pipeline(
+            Pipeline(),
+            start_date=end_date,
+            end_date=end_date,
+            bundle=bundle)
+        get_forward_returns(
+            factor_data,
+            periods=periods,
+            bundle=bundle
+        )
 
         factor_data = []
 
