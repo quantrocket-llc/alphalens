@@ -60,8 +60,11 @@ class GridFigure(object):
 
 @plotting.customize
 def create_summary_tear_sheet(
-    factor_data, long_short=True, group_neutral=False, group_name="group"
-):
+    factor_data: pd.DataFrame,
+    long_short: bool = True,
+    group_neutral: bool = False,
+    group_name: str = "group"
+    ) -> None:
     """
     Create a small summary tear sheet with returns, information, and turnover
     analysis.
@@ -192,9 +195,12 @@ def create_summary_tear_sheet(
 
 @plotting.customize
 def create_returns_tear_sheet(
-    factor_data, long_short=True, group_neutral=False, by_group=False,
-    group_name="group"
-):
+    factor_data: pd.DataFrame,
+    long_short: bool = True,
+    group_neutral: bool = False,
+    by_group: bool = False,
+    group_name: str = "group"
+    ) -> None:
     """
     Create a tear sheet for returns analysis of a factor.
 
@@ -446,8 +452,11 @@ def create_returns_tear_sheet(
 
 @plotting.customize
 def create_information_tear_sheet(
-    factor_data, group_neutral=False, by_group=False, group_name="group"
-):
+    factor_data: pd.DataFrame,
+    group_neutral: bool = False,
+    by_group: bool = False,
+    group_name: str = "group"
+    ) -> None:
     """
     Create a tear sheet for information analysis of a factor.
 
@@ -532,7 +541,10 @@ def create_information_tear_sheet(
 
 
 @plotting.customize
-def create_turnover_tear_sheet(factor_data, turnover_periods=None):
+def create_turnover_tear_sheet(
+    factor_data: pd.DataFrame,
+    turnover_periods: list[str] = None
+    ) -> None:
     """
     Create a tear sheet for analyzing the turnover properties of a factor.
 
@@ -613,11 +625,13 @@ def create_turnover_tear_sheet(factor_data, turnover_periods=None):
 
 
 @plotting.customize
-def create_full_tear_sheet(factor_data,
-                           long_short=True,
-                           group_neutral=False,
-                           by_group=False,
-                           group_name="group"):
+def create_full_tear_sheet(
+    factor_data: pd.DataFrame,
+    long_short: bool = True,
+    group_neutral: bool = False,
+    by_group: bool = False,
+    group_name: str = "group"
+    ) -> None:
     """
     Create a full tear sheet for analysis and evaluation of a single
     return-predicting (alpha) factor.
@@ -662,14 +676,16 @@ def create_full_tear_sheet(factor_data,
 
 
 @plotting.customize
-def create_event_returns_tear_sheet(factor_data,
-                                    returns,
-                                    avgretplot=(5, 15),
-                                    long_short=True,
-                                    group_neutral=False,
-                                    std_bar=True,
-                                    by_group=False,
-                                    group_name="group"):
+def create_event_returns_tear_sheet(
+    factor_data: pd.DataFrame,
+    returns: pd.DataFrame,
+    avgretplot: tuple[int, int] = (5, 15),
+    long_short: bool = True,
+    group_neutral: bool = False,
+    std_bar: bool = True,
+    by_group: bool = False,
+    group_name: str = "group"
+    ) -> None:
     """
     Create a tear sheet to view the average cumulative returns for a
     factor within a window (pre and post event).
@@ -782,11 +798,13 @@ def create_event_returns_tear_sheet(factor_data,
 
 
 @plotting.customize
-def create_event_study_tear_sheet(factor_data,
-                                  returns,
-                                  avgretplot=(5, 15),
-                                  rate_of_ret=True,
-                                  n_bars=50):
+def create_event_study_tear_sheet(
+    factor_data: pd.DataFrame,
+    returns: pd.DataFrame,
+    avgretplot: tuple[int, int] = (5, 15),
+    rate_of_ret: bool = True,
+    n_bars: int = 50
+    ) -> None:
     """
     Create an event study tear sheet for analysis of a specific event.
 

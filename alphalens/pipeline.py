@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union
 import pandas as pd
 from IPython.display import clear_output
 try:
@@ -34,21 +35,22 @@ class EmptyPipeline(Exception):
     pass
 
 def from_pipeline(
-    pipeline,
-    start_date,
-    end_date,
-    bundle=None,
-    factor=None,
-    periods=None,
-    groupby=None,
-    group_neutral=False,
-    quantiles=None,
-    bins=None,
-    groupby_labels=None,
-    long_short=True,
-    max_loss=0.35,
-    zero_aware=False,
-    segment=None):
+    pipeline: "Pipeline",
+    start_date: str,
+    end_date: str,
+    bundle: str = None,
+    factor: str = None,
+    periods: Union[int, list[int]] = None,
+    groupby: Union[str, list[str]] = None,
+    group_neutral: bool = False,
+    quantiles: Union[int, list[float]] = None,
+    bins: Union[int, list[int]] = None,
+    groupby_labels: Union[dict[str, str], list[dict[str, str]]] = None,
+    long_short: bool = True,
+    max_loss: float = 0.35,
+    zero_aware: bool = False,
+    segment: str = None
+    ) -> None:
     """
     Create a full tear sheet from a zipline Pipeline. This is a shortcut for
     separately calling:
@@ -146,6 +148,10 @@ def from_pipeline(
         for quarterly segments). The resulting partial pipeline outputs will
         be concatenated together to produce a single tear sheet, the same
         as if this option were not used.
+
+    Returns
+    -------
+    None
 
     Examples
     --------

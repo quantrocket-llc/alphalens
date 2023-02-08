@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union
 import pandas as pd
 import numpy as np
 import re
@@ -469,17 +470,19 @@ def print_table(table, name=None, fmt=None):
         pd.set_option('display.float_format', prev_option)
 
 
-def get_clean_factor(factor,
-                     forward_returns,
-                     groupby=None,
-                     binning_by_group=False,
-                     quantiles=5,
-                     bins=None,
-                     groupby_labels=None,
-                     group_name="group",
-                     max_loss=0.35,
-                     print_loss=True,
-                     zero_aware=False):
+def get_clean_factor(
+    factor: pd.Series,
+    forward_returns: pd.DataFrame,
+    groupby: Union[pd.Series, dict[str, str], list[Union[pd.Series, dict[str, str]]]] = None,
+    binning_by_group: bool = False,
+    quantiles: Union[int, list[float]] = 5,
+    bins: Union[int, list[float]] = None,
+    groupby_labels: Union[dict[str, str], list[dict[str, str]]] = None,
+    group_name: Union[str, list[str]] = "group",
+    max_loss: float = 0.35,
+    print_loss: bool = True,
+    zero_aware: bool = False
+    ) -> pd.DataFrame:
     """
     Formats the factor data, forward return data, and group mappings into a
     DataFrame that contains aligned MultiIndex indices of timestamp and asset.
@@ -768,19 +771,21 @@ Pandas error message:
     return merged_data
 
 
-def get_clean_factor_and_forward_returns(factor,
-                                         prices,
-                                         groupby=None,
-                                         binning_by_group=False,
-                                         quantiles=5,
-                                         bins=None,
-                                         periods=(1, 5, 10),
-                                         filter_zscore=20,
-                                         groupby_labels=None,
-                                         group_name="group",
-                                         max_loss=0.35,
-                                         zero_aware=False,
-                                         cumulative_returns=True):
+def get_clean_factor_and_forward_returns(
+    factor: pd.Series,
+    prices: pd.DataFrame,
+    groupby: Union[pd.Series, dict[str, str], list[Union[pd.Series, dict[str, str]]]] = None,
+    binning_by_group: bool = False,
+    quantiles: Union[int, list[float]] = 5,
+    bins: Union[int, list[float]] = None,
+    periods: Union[int, list[int]] = None,
+    filter_zscore: int = 20,
+    groupby_labels: Union[dict[str, str], list[dict[str, str]]] = None,
+    group_name: Union[str, list[str]] = "group",
+    max_loss: float = 0.35,
+    zero_aware: bool = False,
+    cumulative_returns: bool = True
+    ) -> pd.DataFrame:
     """
     Formats the factor data, pricing data, and group mappings into a DataFrame
     that contains aligned MultiIndex indices of timestamp and asset. The
