@@ -58,4 +58,4 @@ jobs:
         flake8
     - name: Test with nose
       run: |
-        MATPLOTLIBRC=alphalens/tests/matplotlibrc nosetests alphalens/tests
+        MATPLOTLIBRC=alphalens/_tests/matplotlibrc nosetests alphalens/_tests

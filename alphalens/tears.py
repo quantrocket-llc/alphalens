@@ -22,6 +22,15 @@ from . import plotting
 from . import performance as perf
 from . import utils
 
+__all__ = [
+    "create_summary_tear_sheet",
+    "create_performance_tear_sheet",
+    "create_information_tear_sheet",
+    "create_event_study_tear_sheet",
+    "create_event_returns_tear_sheet",
+    "create_full_tear_sheet",
+    "create_turnover_tear_sheet",
+]
 
 class GridFigure(object):
     """

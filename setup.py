@@ -13,6 +13,7 @@ if __name__ == "__main__":
         packages=find_packages(include='alphalens.*'),
         package_data={
             'alphalens': ['examples/*'],
+            "alphalens": ["py.typed"],
         },
         classifiers=[
             'Development Status :: 5 - Production/Stable',
