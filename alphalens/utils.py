@@ -476,9 +476,9 @@ def print_table(table, name=None, fmt=None):
 
 
 def get_clean_factor(
-    factor: pd.Series,
+    factor: 'pd.Series[float]',
     forward_returns: pd.DataFrame,
-    groupby: Union[pd.Series, dict[str, str], list[Union[pd.Series, dict[str, str]]]] = None,
+    groupby: Union['pd.Series[str]', dict[str, str], list[Union['pd.Series[str]', dict[str, str]]]] = None,
     binning_by_group: bool = False,
     quantiles: Union[int, list[float]] = 5,
     bins: Union[int, list[float]] = None,
@@ -777,9 +777,9 @@ Pandas error message:
 
 
 def get_clean_factor_and_forward_returns(
-    factor: pd.Series,
+    factor: 'pd.Series[float]',
     prices: pd.DataFrame,
-    groupby: Union[pd.Series, dict[str, str], list[Union[pd.Series, dict[str, str]]]] = None,
+    groupby: Union['pd.Series[str]', dict[str, str], list[Union['pd.Series[str]', dict[str, str]]]] = None,
     binning_by_group: bool = False,
     quantiles: Union[int, list[float]] = 5,
     bins: Union[int, list[float]] = None,
