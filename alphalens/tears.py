@@ -12,7 +12,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Functions for creating tear sheets.
 
+Functions
+---------
+create_summary_tear_sheet
+    Create a small summary tear sheet with returns, information, and turnover
+    analysis.
+
+create_returns_tear_sheet
+     Create a tear sheet for returns analysis of a factor.
+
+create_information_tear_sheet
+    Create a tear sheet for information analysis of a factor.
+
+create_event_study_tear_sheet
+    Create an event study tear sheet for analysis of a specific event.
+
+create_event_returns_tear_sheet
+    Create a tear sheet to view the average cumulative returns for a
+    factor within a window (pre and post event).
+
+create_full_tear_sheet
+    Generate a number of tear sheets that are useful for analyzing a
+    strategy's performance.
+
+create_turnover_tear_sheet
+    Create a tear sheet for analyzing the turnover properties of a factor.
+"""
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -24,7 +52,7 @@ from . import utils
 
 __all__ = [
     "create_summary_tear_sheet",
-    "create_performance_tear_sheet",
+    "create_returns_tear_sheet",
     "create_information_tear_sheet",
     "create_event_study_tear_sheet",
     "create_event_returns_tear_sheet",

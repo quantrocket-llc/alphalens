@@ -12,7 +12,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Utility functions for formatting factor data.
 
+Functions
+---------
+get_clean_factor
+    Format the factor data, forward return data, and group mappings into a
+    DataFrame that contains aligned MultiIndex indices of timestamp and asset.
+
+get_clean_factor_and_forward_returns
+    Format the factor data, pricing data, and group mappings into a DataFrame
+    that contains aligned MultiIndex indices of timestamp and asset.
+
+compute_forward_returns
+    Find the N period forward returns (as percent change) for each asset
+    provided.
+"""
 from typing import Union
 import pandas as pd
 import numpy as np
@@ -231,7 +247,7 @@ def compute_forward_returns(factor,
                             filter_zscore=None,
                             cumulative_returns=True):
     """
-    Finds the N period forward returns (as percent change) for each asset
+    Find the N period forward returns (as percent change) for each asset
     provided.
 
     Parameters
@@ -489,7 +505,7 @@ def get_clean_factor(
     zero_aware: bool = False
     ) -> pd.DataFrame:
     """
-    Formats the factor data, forward return data, and group mappings into a
+    Format the factor data, forward return data, and group mappings into a
     DataFrame that contains aligned MultiIndex indices of timestamp and asset.
     The returned data will be formatted to be suitable for Alphalens functions.
 
@@ -792,7 +808,7 @@ def get_clean_factor_and_forward_returns(
     cumulative_returns: bool = True
     ) -> pd.DataFrame:
     """
-    Formats the factor data, pricing data, and group mappings into a DataFrame
+    Format the factor data, pricing data, and group mappings into a DataFrame
     that contains aligned MultiIndex indices of timestamp and asset. The
     returned data will be formatted to be suitable for Alphalens functions.
 
