@@ -46,7 +46,7 @@ def from_pipeline(
     quantiles: Union[int, list[float]] = None,
     bins: Union[int, list[int]] = None,
     groupby_labels: Union[dict[str, str], list[dict[str, str]]] = None,
-    long_short: bool = True,
+    relative_returns: bool = True,
     max_loss: float = 0.35,
     zero_aware: bool = False,
     segment: str = None
@@ -120,16 +120,14 @@ def from_pipeline(
         to the display name for each group. If groupby is a list or tuple,
         grouby_labels must be a list or tuple of the same length.
 
-    long_short : bool
-        Simulate a long/short portfolio if True (the default), otherwise a
-        long-only portfolio. If True (long/short portfolio), relative returns
-        (that is, relative to the overall mean) will be displayed, thus
-        emphasizing the return spread between different quantiles. If False
-        (long-only portfolio), actual returns will be displayed. Default True.
+    relative_returns : bool
+        If True, relative returns (that is, relative to the overall mean) will
+        be displayed, thus emphasizing the return spread between different
+        quantiles. If False, actual returns will be displayed. Default True.
 
     max_loss : float, optional
         Maximum percentage (0.00 to 1.00) of factor data dropping allowed,
-        computed comparing the number of items in the input factor index and
+        computed by comparing the number of items in the input factor index and
         the number of items in the output DataFrame index.
         Factor data can be partially dropped due to being flawed itself
         (e.g. NaNs), not having forward returns for all factor values, or
@@ -138,9 +136,18 @@ def from_pipeline(
 
     zero_aware : bool
         If True, compute quantile buckets separately for positive and negative
-        signal values. This is useful if your signal is centered and zero is
-        the separation between long and short signals, respectively. Default
-        False.
+        factor values. This ensures that no bucket will contain a mix of positive
+        and negative values. This is useful if your factor is centered and zero
+        is the separation between long and short signals, respectively. In the
+        cumulative return plot, positive factor values will be longed and negative
+        values will shorted. If False, compute quantile buckets across the
+        continuum of factor values (even if it results in a bucket containing
+        a mix of positive and negative values). In the cumulative return plot,
+        factor values will be demeaned to determine long and short signals,
+        that is, all factor values above the mean will be longed and all factor
+        values below the mean will be shorted. False is useful if your factor values
+        are all positive, all negative, or if the distinction between positive
+        and negative doesn't matter. Default False.
 
     segment : str, optional
         run pipeline in date segments of this size, to reduce memory usage
@@ -283,10 +290,11 @@ def from_pipeline(
     clear_output()
     create_full_tear_sheet(
         factor_data,
-        long_short=long_short,
+        relative_returns=relative_returns,
         group_neutral=group_neutral,
         by_group=bool(groupby_cols),
-        group_name=groupby_cols or "group"
+        group_name=groupby_cols or "group",
+        zero_aware=zero_aware
     )
 
 def _run_segment(pipeline,

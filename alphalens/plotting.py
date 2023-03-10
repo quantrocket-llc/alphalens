@@ -144,7 +144,6 @@ def plot_returns_table(alpha_beta,
                        demeaned=True):
 
     relative = "Relative " if demeaned else ""
-    long_short = "Long/Short" if demeaned else "Long-Only"
 
     returns_table = pd.DataFrame()
     returns_table = returns_table.append(alpha_beta)
@@ -157,7 +156,7 @@ def plot_returns_table(alpha_beta,
 
     utils.print_table(
         returns_table.apply(lambda x: x.round(3)).style.set_caption(
-            f"{long_short} Returns Analysis"
+            "Returns Analysis"
         ).format(**PANDAS_TABLE_FORMAT).set_table_styles(PANDAS_TABLE_STYLES, overwrite=False))
 
 
@@ -200,7 +199,7 @@ def plot_information_table(ic_data):
             PANDAS_TABLE_STYLES, overwrite=False))
 
 
-def plot_quantile_statistics_table(factor_data):
+def plot_factor_distribution_table(factor_data):
     quantile_stats = factor_data.groupby('factor_quantile') \
         .agg(['min', 'max', 'mean', 'std', 'count'])['factor']
     daily_counts = factor_data.groupby(

@@ -167,7 +167,7 @@ class TearsTestCase(TestCase):
             filter_zscore=filter_zscore)
 
         create_returns_tear_sheet(
-            factor_data, long_short=False, group_neutral=False, by_group=False)
+            factor_data, relative_returns=False, group_neutral=False, by_group=False)
 
     @parameterized.expand([(1, (1, 5, 10), None),
                            (4, (1, 2, 3, 7), 20)])
@@ -228,9 +228,9 @@ class TearsTestCase(TestCase):
             filter_zscore=filter_zscore)
 
         create_summary_tear_sheet(
-            factor_data, long_short=True, group_neutral=False)
+            factor_data, relative_returns=True, group_neutral=False)
         create_summary_tear_sheet(
-            factor_data, long_short=False, group_neutral=False)
+            factor_data, relative_returns=False, group_neutral=False)
 
     @parameterized.expand([
         (2, (1, 5, 10), None, None),
@@ -260,11 +260,11 @@ class TearsTestCase(TestCase):
                 periods=periods,
                 filter_zscore=filter_zscore)
 
-            create_full_tear_sheet(factor_data, long_short=False,
+            create_full_tear_sheet(factor_data, relative_returns=False,
                                    group_neutral=False, by_group=False)
-            create_full_tear_sheet(factor_data, long_short=True,
+            create_full_tear_sheet(factor_data, relative_returns=True,
                                    group_neutral=False, by_group=True)
-            create_full_tear_sheet(factor_data, long_short=True,
+            create_full_tear_sheet(factor_data, relative_returns=True,
                                    group_neutral=True, by_group=True)
 
     @parameterized.expand([(2, (1, 5, 10), None, None),
@@ -290,17 +290,17 @@ class TearsTestCase(TestCase):
                 filter_zscore=filter_zscore)
 
             create_event_returns_tear_sheet(factor_data, prices, avgretplot=(
-                5, 11), long_short=False, group_neutral=False, by_group=False)
+                5, 11), relative_returns=False, group_neutral=False, by_group=False)
             create_event_returns_tear_sheet(factor_data, prices, avgretplot=(
-                5, 11), long_short=True, group_neutral=False, by_group=False)
+                5, 11), relative_returns=True, group_neutral=False, by_group=False)
             create_event_returns_tear_sheet(factor_data, prices, avgretplot=(
-                5, 11), long_short=False, group_neutral=True, by_group=False)
+                5, 11), relative_returns=False, group_neutral=True, by_group=False)
             create_event_returns_tear_sheet(factor_data, prices, avgretplot=(
-                5, 11), long_short=False, group_neutral=False, by_group=True)
+                5, 11), relative_returns=False, group_neutral=False, by_group=True)
             create_event_returns_tear_sheet(factor_data, prices, avgretplot=(
-                5, 11), long_short=True, group_neutral=False, by_group=True)
+                5, 11), relative_returns=True, group_neutral=False, by_group=True)
             create_event_returns_tear_sheet(factor_data, prices, avgretplot=(
-                5, 11), long_short=False, group_neutral=True, by_group=True)
+                5, 11), relative_returns=False, group_neutral=True, by_group=True)
 
     @parameterized.expand([((6, 8), None, None),
                            ((6, 8), None, None),
@@ -370,6 +370,6 @@ class TearsTestCase(TestCase):
             periods=[1])
 
         create_full_tear_sheet(
-            factor_data, long_short=True,
+            factor_data, relative_returns=True,
             group_neutral=False, by_group=True,
             group_name=["group1", "groupb"])

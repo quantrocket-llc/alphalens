@@ -155,11 +155,17 @@ def factor_weights(factor_data,
         (optionally) the group the asset belongs to.
         - See full explanation in utils.get_clean_factor_and_forward_returns
     demeaned : bool
-        Should this computation happen on a long short portfolio? if True,
-        weights are computed by demeaning factor values and dividing by the sum
-        of their absolute value (achieving gross leverage of 1). The sum of
-        positive weights will be the same as the negative weights (absolute
-        value), suitable for a dollar neutral long-short portfolio
+        If True, weights are computed by demeaning factor values and dividing
+        by the sum of their absolute value (achieving gross leverage of 1).
+        Positive weights will be assigned to factor values above the mean, and
+        negative weights will be assigned to factor values below the mean. The
+        sum of positive weights will be the same as the negative weights (absolute
+        value), suitable for a dollar neutral long-short portfolio. If False,
+        weights are computed by dividing factor values by the sum of their
+        absolute value (achieving gross leverage of 1). In this case, positive weights
+        will be assigned to positive factor values and negative weights will be
+        assigned to positive factor values. Positive and negative weights may not
+        sum to the same value, that is, the portfolio won't be dollar-neutral.
     group_adjust : bool
         Should this computation happen on a group neutral portfolio? If True,
         compute group neutral weights: each group will weight the same and
@@ -248,7 +254,7 @@ def factor_returns(factor_data,
         Control how to build factor weights
         -- see performance.factor_weights for a full explanation
     by_asset: bool, optional
-        If True, returns are reported separately for each esset.
+        If True, returns are reported separately for each asset.
 
     Returns
     -------
@@ -1102,10 +1108,10 @@ def create_pyfolio_input(factor_data,
         the portfolio to hold both long and short positions and the total
         weights of both long and short positions will be equal.
         If False the portfolio weights will be computed dividing the factor
-        values and  by the sum of their absolute value (achieving gross
+        values by the sum of their absolute value (achieving gross
         leverage of 1). Positive factor values will generate long positions and
         negative factor values will produce short positions so that a factor
-        with only posive values will result in a long only portfolio.
+        with only positive values will result in a long only portfolio.
     group_neutral : bool, optional
         If True simulates a group neutral portfolio: the portfolio weights
         will be computed so that each group will weigh the same.

@@ -98,7 +98,7 @@ class GridFigure(object):
 @plotting.customize
 def create_summary_tear_sheet(
     factor_data: pd.DataFrame,
-    long_short: bool = True,
+    relative_returns: bool = True,
     group_neutral: bool = False,
     group_name: str = "group"
     ) -> None:
@@ -116,9 +116,10 @@ def create_summary_tear_sheet(
 
         - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
 
-    long_short : bool
-        Should this computation happen on a long short portfolio? if so, then
-        mean quantile returns will be demeaned across the factor universe.
+    relative_returns : bool
+        If True, relative returns (that is, relative to the overall mean) will
+        be displayed, thus emphasizing the return spread between different
+        quantiles. If False, actual returns will be displayed. Default True.
 
     group_neutral : bool
         Should this computation happen on a group neutral portfolio? if so,
@@ -132,7 +133,7 @@ def create_summary_tear_sheet(
     mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
         factor_data,
         by_group=False,
-        demeaned=long_short,
+        demeaned=relative_returns,
         group_adjust=group_neutral,
         group_name=group_name
     )
@@ -145,7 +146,7 @@ def create_summary_tear_sheet(
         factor_data,
         by_date=True,
         by_group=False,
-        demeaned=long_short,
+        demeaned=relative_returns,
         group_adjust=group_neutral,
         group_name=group_name
     )
@@ -162,7 +163,7 @@ def create_summary_tear_sheet(
 
     alpha_beta = perf.factor_alpha_beta(
         factor_data,
-        demeaned=long_short,
+        demeaned=relative_returns,
         group_adjust=group_neutral,
         group_name=group_name
     )
@@ -181,19 +182,19 @@ def create_summary_tear_sheet(
     vertical_sections = 2 + fr_cols * 3
     gf = GridFigure(rows=vertical_sections, cols=1)
 
-    plotting.plot_quantile_statistics_table(factor_data)
+    plotting.plot_factor_distribution_table(factor_data)
 
     plotting.plot_returns_table(
         alpha_beta,
         mean_quant_rateret,
         mean_ret_spread_quant,
-        demeaned=long_short
+        demeaned=relative_returns
     )
 
     plotting.plot_quantile_returns_bar(
         mean_quant_rateret,
         by_group=False,
-        demeaned=long_short,
+        demeaned=relative_returns,
         ylim_percentiles=None,
         ax=gf.next_row(),
     )
@@ -233,10 +234,11 @@ def create_summary_tear_sheet(
 @plotting.customize
 def create_returns_tear_sheet(
     factor_data: pd.DataFrame,
-    long_short: bool = True,
+    relative_returns: bool = True,
     group_neutral: bool = False,
     by_group: bool = False,
-    group_name: str = "group"
+    group_name: str = "group",
+    zero_aware: bool = False,
     ) -> None:
     """
     Create a tear sheet for returns analysis of a factor.
@@ -251,11 +253,9 @@ def create_returns_tear_sheet(
 
         - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
 
-    long_short : bool
-        Should this computation happen on a long short portfolio? if so, then
-        mean quantile returns will be demeaned across the factor universe.
-        Additionally factor values will be demeaned across the factor universe
-        when factor weighting the portfolio for cumulative returns plots
+    relative_returns : bool
+        If True, show relative returns by demeaning across the factor universe.
+        If False, show actual returns. Default True.
 
     group_neutral : bool
         If True, demean returns on the group level, and weight each group
@@ -268,6 +268,13 @@ def create_returns_tear_sheet(
         name of the group column in factor_data. Defaults to "group". A list
         of names can be passed to display group-level graphs based on multiple
         columns.
+
+    zero_aware : bool
+        If True, in the cumulative return plot, positive factor values will be
+        longed and negative values will shorted. If False, factor values will be
+        demeaned to determine long and short signals, that is, all factor values
+        above the mean will be longed and all factor values below the mean will
+        be shorted. Default False.
     """
     group_names = group_name
     if not isinstance(group_names, (list, tuple)):
@@ -277,24 +284,17 @@ def create_returns_tear_sheet(
     if group_neutral and len(group_names) > 1:
         raise ValueError("to use group_neutral, only one group_name can be passed")
 
-    actual_factor_returns = perf.factor_returns(
+    factor_returns = perf.factor_returns(
         factor_data,
-        demeaned=False,
+        demeaned=not zero_aware,
         group_adjust=group_neutral,
         group_name=group_name
     )
-    demeaned_factor_returns = perf.factor_returns(
-        factor_data,
-        demeaned=True,
-        group_adjust=group_neutral,
-        group_name=group_name
-    )
-    factor_returns = demeaned_factor_returns if long_short else actual_factor_returns
 
     mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
         factor_data,
         by_group=False,
-        demeaned=long_short,
+        demeaned=relative_returns,
         group_adjust=group_neutral,
         group_name=group_name
     )
@@ -311,7 +311,7 @@ def create_returns_tear_sheet(
         group_adjust=False
     )
 
-    if long_short:
+    if relative_returns:
         demeaned_mean_quant_ret_bydate, demeaned_std_quant_daily = perf.mean_return_by_quantile(
             factor_data,
             by_date=True,
@@ -323,7 +323,7 @@ def create_returns_tear_sheet(
 
     mean_quant_ret_bydate, std_quant_daily = (
         (demeaned_mean_quant_ret_bydate, demeaned_std_quant_daily)
-        if long_short else
+        if relative_returns else
         (actual_mean_quant_ret_bydate, actual_std_quant_daily)
     )
 
@@ -351,28 +351,28 @@ def create_returns_tear_sheet(
 
     fr_cols = len(factor_returns.columns)
     vertical_sections = 2 + fr_cols * 3
-    if long_short:
-        vertical_sections += 2
+    if relative_returns:
+        vertical_sections += 1
     gf = GridFigure(rows=vertical_sections, cols=1)
 
     plotting.plot_returns_table(
         alpha_beta,
         mean_quant_rateret,
         mean_ret_spread_quant,
-        demeaned=long_short
+        demeaned=relative_returns
     )
 
     plotting.plot_quantile_returns_bar(
         mean_quant_rateret,
         by_group=False,
-        demeaned=long_short,
+        demeaned=relative_returns,
         ylim_percentiles=None,
         ax=gf.next_row(),
     )
 
     plotting.plot_quantile_returns_violin(
         mean_quant_rateret_bydate,
-        demeaned=long_short,
+        demeaned=relative_returns,
         ylim_percentiles=(1, 99),
         ax=gf.next_row()
     )
@@ -387,25 +387,15 @@ def create_returns_tear_sheet(
             + " %s Portfolio Cumulative Return (1D Period)"
         )
 
-        if long_short:
-
-            plotting.plot_cumulative_returns(
-                demeaned_factor_returns[["1D"]].rename(columns={"1D": "Long/Short"}),
-                period="1D",
-                color=sns.color_palette('colorblind')[3],
-                title=title % "Long/Short",
-                ax=gf.next_row()
-            )
-
         plotting.plot_cumulative_returns(
-            actual_factor_returns[["1D"]].rename(columns={"1D": "Long-Only"}),
+            factor_returns[["1D"]].rename(columns={"1D": "Long/Short"}),
             period="1D",
-            color=sns.color_palette('colorblind')[2],
-            title=title % "Long-Only",
+            color=sns.color_palette('colorblind')[3],
+            title=title % "Long/Short",
             ax=gf.next_row()
         )
 
-        if long_short:
+        if relative_returns:
             plotting.plot_cumulative_returns_by_quantile(
                 demeaned_mean_quant_ret_bydate["1D"],
                 period="1D",
@@ -419,7 +409,7 @@ def create_returns_tear_sheet(
             period="1D",
             # say "Actual" Cumulative Return if there's a "Relative"
             # plot, but otherwise nothing
-            relative_or_actual="Actual" if long_short else "",
+            relative_or_actual="Actual" if relative_returns else "",
             ax=gf.next_row()
         )
 
@@ -450,7 +440,7 @@ def create_returns_tear_sheet(
                 by_date=False,
                 by_group=True,
                 group_name=group_name,
-                demeaned=long_short,
+                demeaned=relative_returns,
                 group_adjust=group_neutral,
             )
 
@@ -479,7 +469,7 @@ def create_returns_tear_sheet(
                 mean_quant_rateret_group,
                 by_group=True,
                 group_name=group_name,
-                demeaned=long_short,
+                demeaned=relative_returns,
                 ylim_percentiles=(5, 95),
                 ax=ax_quantile_returns_bar_by_group,
             )
@@ -664,10 +654,11 @@ def create_turnover_tear_sheet(
 @plotting.customize
 def create_full_tear_sheet(
     factor_data: pd.DataFrame,
-    long_short: bool = True,
+    relative_returns: bool = True,
     group_neutral: bool = False,
     by_group: bool = False,
-    group_name: str = "group"
+    group_name: str = "group",
+    zero_aware: bool = False,
     ) -> None:
     """
     Create a full tear sheet for analysis and evaluation of a single
@@ -683,11 +674,10 @@ def create_full_tear_sheet(
 
         - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
 
-    long_short : bool
-        Should this computation happen on a long short portfolio?
-
-        - See :class:`alphalens.tears.create_returns_tear_sheet` for details on how this flag
-          affects returns analysis
+    relative_returns : bool
+        If True, relative returns (that is, relative to the overall mean) will
+        be displayed, thus emphasizing the return spread between different
+        quantiles. If False, actual returns will be displayed. Default True.
 
     group_neutral : bool
         If True, demean returns on the group level, and weight each group
@@ -700,11 +690,24 @@ def create_full_tear_sheet(
         name of the group column in factor_data. Defaults to "group". A list
         of names can be passed to display group-level graphs based on multiple
         columns.
+
+    zero_aware : bool
+        If True, in the cumulative return plot, positive factor values will be
+        longed and negative values will shorted. If False, factor values will be
+        demeaned to determine long and short signals, that is, all factor values
+        above the mean will be longed and all factor values below the mean will
+        be shorted. Default False.
     """
 
-    plotting.plot_quantile_statistics_table(factor_data)
+    plotting.plot_factor_distribution_table(factor_data)
     create_returns_tear_sheet(
-        factor_data, long_short, group_neutral, by_group, group_name=group_name, set_context=False
+        factor_data,
+        relative_returns,
+        group_neutral,
+        by_group,
+        group_name=group_name,
+        zero_aware=zero_aware,
+        set_context=False
     )
     create_information_tear_sheet(
         factor_data, group_neutral, by_group, group_name=group_name, set_context=False
@@ -717,7 +720,7 @@ def create_event_returns_tear_sheet(
     factor_data: pd.DataFrame,
     returns: pd.DataFrame,
     avgretplot: tuple[int, int] = (5, 15),
-    long_short: bool = True,
+    relative_returns: bool = True,
     group_neutral: bool = False,
     std_bar: bool = True,
     by_group: bool = False,
@@ -746,9 +749,10 @@ def create_event_returns_tear_sheet(
     avgretplot: tuple (int, int) - (before, after)
         If not None, plot quantile average cumulative returns
 
-    long_short : bool
-        Should this computation happen on a long short portfolio? if so then
-        factor returns will be demeaned across the factor universe
+    relative_returns : bool
+        If True, relative returns (that is, relative to the overall mean) will
+        be displayed, thus emphasizing the return spread between different
+        quantiles. If False, actual returns will be displayed. Default True.
 
     group_neutral : bool
         Should this computation happen on a group neutral portfolio? if so,
@@ -771,7 +775,7 @@ def create_event_returns_tear_sheet(
         returns,
         periods_before=before,
         periods_after=after,
-        demeaned=long_short,
+        demeaned=relative_returns,
         group_adjust=group_neutral,
         group_name=group_name
     )
@@ -814,7 +818,7 @@ def create_event_returns_tear_sheet(
             returns,
             periods_before=before,
             periods_after=after,
-            demeaned=long_short,
+            demeaned=relative_returns,
             group_adjust=group_neutral,
             by_group=True,
             group_name=group_name
@@ -872,9 +876,9 @@ def create_event_study_tear_sheet(
         Number of bars in event distribution plot
     """
 
-    long_short = False
+    relative_returns = False
 
-    plotting.plot_quantile_statistics_table(factor_data)
+    plotting.plot_factor_distribution_table(factor_data)
 
     gf = GridFigure(rows=1, cols=1)
     plotting.plot_events_distribution(
@@ -889,7 +893,7 @@ def create_event_study_tear_sheet(
             factor_data=factor_data,
             returns=returns,
             avgretplot=avgretplot,
-            long_short=long_short,
+            relative_returns=relative_returns,
             group_neutral=False,
             std_bar=True,
             by_group=False,
@@ -904,7 +908,7 @@ def create_event_study_tear_sheet(
     mean_quant_ret, std_quantile = perf.mean_return_by_quantile(
         factor_data,
         by_group=False,
-        demeaned=long_short
+        demeaned=relative_returns
     )
     if rate_of_ret:
         mean_quant_ret = mean_quant_ret.apply(
@@ -915,7 +919,7 @@ def create_event_study_tear_sheet(
         factor_data,
         by_date=True,
         by_group=False,
-        demeaned=long_short
+        demeaned=relative_returns
     )
     if rate_of_ret:
         mean_quant_ret_bydate = mean_quant_ret_bydate.apply(
@@ -931,14 +935,14 @@ def create_event_study_tear_sheet(
     plotting.plot_quantile_returns_bar(
         mean_quant_ret,
         by_group=False,
-        demeaned=long_short,
+        demeaned=relative_returns,
         ylim_percentiles=None,
         ax=gf.next_row()
     )
 
     plotting.plot_quantile_returns_violin(
         mean_quant_ret_bydate,
-        demeaned=long_short,
+        demeaned=relative_returns,
         ylim_percentiles=(1, 99),
         ax=gf.next_row()
     )
