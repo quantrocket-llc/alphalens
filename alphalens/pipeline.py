@@ -324,7 +324,7 @@ def _run_segment(pipeline,
 
     if factor_data.empty:
         raise EmptyPipeline(
-            "cannot create tear sheet` because the pipeline result is empty, "
+            "cannot create tear sheet because the pipeline result is empty, "
             "please check the pipeline definition")
 
     # validate groupby columns now that we have them
@@ -339,7 +339,7 @@ def _run_segment(pipeline,
             raise ValueError(
                 f"groupby column '{groupby_col}' has {num_uniques} unique values, "
                 "which is too many and won't plot well. Consider using "
-                "`my_factor.quantiles(5)` to group the values into a smaller number "
+                f"`{groupby_col}.quantiles(5)` to group the values into a smaller number "
                 f"of quantiles (maximum {max_uniques} unique values)."
             )
         groupby_series.append(groupby_data)
