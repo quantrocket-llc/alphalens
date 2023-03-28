@@ -160,6 +160,13 @@ def from_pipeline(
     -------
     None
 
+    Notes
+    -----
+    Usage Guide:
+
+    * Alphalens: https://qrok.it/dl/al/alphalens
+    * Pipeline: https://qrok.it/dl/al/pipeline
+
     Examples
     --------
     Create a tear sheet from a Pipeline that calculates 1-year momentum, grouping
