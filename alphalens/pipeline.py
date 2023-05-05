@@ -44,7 +44,7 @@ def from_pipeline(
     groupby: Union[str, list[str]] = None,
     group_neutral: bool = False,
     quantiles: Union[int, list[float]] = None,
-    bins: Union[int, list[int]] = None,
+    bins: Union[int, list[float]] = None,
     groupby_labels: Union[dict[str, str], list[dict[str, str]]] = None,
     relative_returns: bool = True,
     max_loss: float = 0.35,
@@ -112,8 +112,10 @@ def from_pipeline(
         sequence of bin edges allowing for non-uniform bin width
         e.g. [-4, -2, -0.5, 0, 10]. Only one of 'quantiles' or 'bins' can be
         specified. Using 'bins' instead of 'quantiles' is useful when the factor
-        contains discrete values, such a numeric score of 1-5 when want to see
-        results by score.
+        contains discrete values, such as numeric score of 1-3 when we want to
+        see results by score. Bins include the right edge but not the left edge.
+        Thus, given a possible score of 1-3, you could use bins=[0,1,2,3] to have
+        one bin per score value.
 
     groupby_labels : dict or list of dict, optional
         A dictionary keyed by group code with values corresponding
