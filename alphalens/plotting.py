@@ -432,12 +432,13 @@ def plot_quantile_returns_bar(mean_ret_by_q,
             # If the group is empty, just hide the axis (this can
             # happen when the group level is categorical and there is a
             # category choice that is not present in the data)
-            if xs.empty:
+            if xs.empty or xs.isnull().all().all():
                 a.set_axis_off()
                 continue
 
-            title = f"Mean {relative}Return by {factor_name} Quantile for {group_name.capitalize()} {'Group ' if group_name != 'group' else ''}{gp}"
-            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=textwrap.fill(title, width=70), ax=a)
+            group_display_name = " ".join([word.capitalize() for word in group_name.split("_")])
+            title = f"Mean {relative}Return by {factor_name} Quantile for {group_display_name} {'Group ' if group_name != 'group' else ''}{gp}"
+            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=textwrap.fill(title, width=55), ax=a)
 
             a.set(xlabel='', ylabel=f'Mean {relative}Return (bps)',
                   ylim=(ymin, ymax))
@@ -671,11 +672,13 @@ def plot_quantile_composition_by_group(factor_data,
     if num_groups > 10:
         color_palette += sns.color_palette("husl", num_groups-10)
 
+    group_display_name = " ".join([word.capitalize() for word in group_name.split("_")])
+
     with color_palette:
         group_counts_bottom_quantile.plot(
             kind="pie",
             title=textwrap.fill(
-                f"Bottom {factor_name} Quantile Composition by {group_name.capitalize()}",
+                f"Bottom {factor_name} Quantile Composition by {group_display_name}",
                 width=70),
             autopct=autopct,
             labeldistance=None,
@@ -690,7 +693,7 @@ def plot_quantile_composition_by_group(factor_data,
         group_counts_top_quantile.plot(
             kind="pie",
             title=textwrap.fill(
-                f"Top {factor_name} Quantile Composition by {group_name.capitalize()}",
+                f"Top {factor_name} Quantile Composition by {group_display_name}",
                 width=70),
             autopct=autopct,
             labeldistance=None,
@@ -963,25 +966,26 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
             # If the group is empty, just hide the axis (this can
             # happen when the group level is categorical and there is a
             # category choice that is not present in the data)
-            if xs.empty:
+            if xs.empty or xs.isnull().all().all():
                 a.set_axis_off()
                 continue
 
             cor.index = cor.index.droplevel(group_name)
             ret_wide = cor.unstack('factor_quantile')
 
-
             cum_ret = ret_wide.apply(perf.cumulative_returns)
 
             cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
+
+            group_display_name = " ".join([word.capitalize() for word in group_name.split("_")])
 
             cum_ret.plot(lw=2, ax=a, cmap=cm.coolwarm)
             a.legend()
             ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
             a.set(ylabel='Log Cumulative Returns',
-                title=textwrap.wrap(
-                        f"{relative_or_actual}{period} Return by {factor_name} Quantile for {group_name.capitalize()} {'Group ' if group_name != 'group' else ''}{gp}",
-                        width=70),
+                title=textwrap.fill(
+                        f"{relative_or_actual}{period} Return by {factor_name} Quantile for {group_display_name} {'Group ' if group_name != 'group' else ''}{gp}",
+                        width=55),
                 xlabel='',
                 yscale='symlog',
                 yticks=np.linspace(ymin, ymax, 5),
