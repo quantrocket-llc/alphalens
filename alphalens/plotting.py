@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
 from functools import wraps
+import textwrap
 
 from . import utils
 from . import performance as perf
@@ -199,7 +200,7 @@ def plot_information_table(ic_data):
             PANDAS_TABLE_STYLES, overwrite=False))
 
 
-def plot_factor_distribution_table(factor_data):
+def plot_factor_distribution_table(factor_data, factor_name='Factor'):
     quantile_stats = factor_data.groupby('factor_quantile') \
         .agg(['min', 'max', 'mean', 'std', 'count'])['factor']
     daily_counts = factor_data.groupby(
@@ -209,7 +210,7 @@ def plot_factor_distribution_table(factor_data):
     quantile_stats['count %'] = quantile_stats['count'] \
         / quantile_stats['count'].sum() * 100.
 
-    quantile_stats.index.rename('Factor Quantile', inplace=True)
+    quantile_stats.index.rename(f'{factor_name} Quantile', inplace=True)
 
     utils.print_table(quantile_stats.style.set_caption(
         "Factor Distribution").format(
@@ -375,7 +376,8 @@ def plot_quantile_returns_bar(mean_ret_by_q,
                               group_name="group",
                               demeaned=True,
                               ylim_percentiles=None,
-                              ax=None):
+                              ax=None,
+                              factor_name='Factor'):
     """
     Plots mean period wise returns for factor quantiles.
 
@@ -434,8 +436,8 @@ def plot_quantile_returns_bar(mean_ret_by_q,
                 a.set_axis_off()
                 continue
 
-            title = f"{group_name}: {gp}"
-            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=title, ax=a)
+            title = f"Mean {relative}Return by {factor_name} Quantile for {group_name.capitalize()} {'Group ' if group_name != 'group' else ''}{gp}"
+            xs.multiply(DECIMAL_TO_BPS).plot(kind='bar', title=textwrap.fill(title, width=70), ax=a)
 
             a.set(xlabel='', ylabel=f'Mean {relative}Return (bps)',
                   ylim=(ymin, ymax))
@@ -451,7 +453,7 @@ def plot_quantile_returns_bar(mean_ret_by_q,
 
         (mean_ret_by_q.multiply(DECIMAL_TO_BPS)
             .plot(kind='bar',
-                  title=f"Mean {relative}Return By Factor Quantile", ax=ax))
+                  title=f"Mean {relative}Return By {factor_name} Quantile", ax=ax))
         ax.set(xlabel='', ylabel=f'Mean {relative}Return (bps)',
                ylim=(ymin, ymax))
 
@@ -461,7 +463,8 @@ def plot_quantile_returns_bar(mean_ret_by_q,
 def plot_quantile_returns_violin(return_by_q,
                                 demeaned=True,
                                  ylim_percentiles=None,
-                                 ax=None):
+                                 ax=None,
+                                 factor_name='Factor'):
     """
     Plots a violin box plot of period wise returns for factor quantiles.
 
@@ -514,7 +517,7 @@ def plot_quantile_returns_violin(return_by_q,
                    inner='quartile',
                    ax=ax)
     ax.set(xlabel='', ylabel=f'{relative}Return (bps)',
-           title=f"{relative}Return By Factor Quantile",
+           title=f"{relative}Return By {factor_name} Quantile",
            ylim=(ymin, ymax))
 
     ax.axhline(0.0, linestyle='-', color='black', lw=0.7, alpha=0.6)
@@ -611,7 +614,10 @@ def plot_mean_quantile_returns_spread_time_series(mean_returns_spread,
 
     return ax
 
-def plot_quantile_composition_by_group(factor_data, group_name="group", ax=None):
+def plot_quantile_composition_by_group(factor_data,
+                                       group_name="group",
+                                       ax=None,
+                                       factor_name='Factor'):
     """
     Plot pie charts for the top and bottom quantiles, showing the percent composition
     of each quantile by group.
@@ -668,7 +674,9 @@ def plot_quantile_composition_by_group(factor_data, group_name="group", ax=None)
     with color_palette:
         group_counts_bottom_quantile.plot(
             kind="pie",
-            title=f"Bottom Quantile Composition by {group_name}",
+            title=textwrap.fill(
+                f"Bottom {factor_name} Quantile Composition by {group_name.capitalize()}",
+                width=70),
             autopct=autopct,
             labeldistance=None,
             normalize=True,
@@ -681,7 +689,9 @@ def plot_quantile_composition_by_group(factor_data, group_name="group", ax=None)
 
         group_counts_top_quantile.plot(
             kind="pie",
-            title=f"Top Quantile Composition by {group_name}",
+            title=textwrap.fill(
+                f"Top {factor_name} Quantile Composition by {group_name.capitalize()}",
+                width=70),
             autopct=autopct,
             labeldistance=None,
             normalize=True,
@@ -903,7 +913,8 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
                                         period=None,
                                         relative_or_actual="Relative",
                                         group_neutral_name=None,
-                                        ax=None):
+                                        ax=None,
+                                        factor_name='Factor'):
     """
     Plots the cumulative returns of various factor quantiles.
 
@@ -943,7 +954,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
     ax.set(ylabel='Log Cumulative Returns',
            title=(
-            f"{relative_or_actual}Cumulative Return by Quantile "
+            f"{relative_or_actual}Cumulative Return by {factor_name} Quantile "
             f"({period} Period, {weighting} Quantiles)"),
            xlabel='',
            yscale='symlog',

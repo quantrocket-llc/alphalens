@@ -302,6 +302,7 @@ def from_pipeline(
     clear_output()
     create_full_tear_sheet(
         factor_data,
+        factor_name=" ".join([word.capitalize() for word in factor.split("_")]),
         relative_returns=relative_returns,
         group_neutral=group_neutral,
         by_group=bool(groupby_cols),

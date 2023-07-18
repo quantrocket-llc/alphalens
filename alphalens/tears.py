@@ -234,6 +234,7 @@ def create_summary_tear_sheet(
 @plotting.customize
 def create_returns_tear_sheet(
     factor_data: pd.DataFrame,
+    factor_name: str = 'Factor',
     relative_returns: bool = True,
     group_neutral: bool = False,
     by_group: bool = False,
@@ -252,6 +253,10 @@ def create_returns_tear_sheet(
         and (optionally) the group the asset belongs to.
 
         - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
+    factor_name : str, optional
+        Name of the factor. This will be used in the factor tear sheet plots and
+        tables.
 
     relative_returns : bool
         If True, show relative returns by demeaning across the factor universe.
@@ -376,13 +381,15 @@ def create_returns_tear_sheet(
         demeaned=relative_returns,
         ylim_percentiles=None,
         ax=gf.next_row(),
+        factor_name=factor_name,
     )
 
     plotting.plot_quantile_returns_violin(
         mean_quant_rateret_bydate,
         demeaned=relative_returns,
         ylim_percentiles=(1, 99),
-        ax=gf.next_row()
+        ax=gf.next_row(),
+        factor_name=factor_name,
     )
 
     # Compute cumulative returns from daily simple returns, if '1D', 'Intraday',
@@ -390,7 +397,7 @@ def create_returns_tear_sheet(
     for colname in fr_1d_cols:
 
         title = (
-            "Factor-Weighted"
+            f"{factor_name}-Weighted"
             + (f", {group_name}-Neutral," if group_neutral else "")
             + f" %s Portfolio Cumulative Return ({colname} Period)"
         )
@@ -409,7 +416,8 @@ def create_returns_tear_sheet(
                 period=colname,
                 relative_or_actual="Relative",
                 group_neutral_name=group_name if group_neutral else None,
-                ax=gf.next_row()
+                ax=gf.next_row(),
+                factor_name=factor_name,
             )
 
         plotting.plot_cumulative_returns_by_quantile(
@@ -418,7 +426,8 @@ def create_returns_tear_sheet(
             # say "Actual" Cumulative Return if there's a "Relative"
             # plot, but otherwise nothing
             relative_or_actual="Actual" if relative_returns else "",
-            ax=gf.next_row()
+            ax=gf.next_row(),
+            factor_name=factor_name
         )
 
     ax_mean_quantile_returns_spread_ts = [
@@ -468,7 +477,8 @@ def create_returns_tear_sheet(
             plotting.plot_quantile_composition_by_group(
                 factor_data,
                 group_name=group_name,
-                ax=[gf.next_cell(), gf.next_cell()])
+                ax=[gf.next_cell(), gf.next_cell()],
+                factor_name=factor_name)
 
             ax_quantile_returns_bar_by_group = [
                 gf.next_cell() for _ in range(num_groups)
@@ -480,6 +490,7 @@ def create_returns_tear_sheet(
                 demeaned=relative_returns,
                 ylim_percentiles=(5, 95),
                 ax=ax_quantile_returns_bar_by_group,
+                factor_name=factor_name
             )
             plt.show()
             gf.close()
@@ -665,6 +676,7 @@ def create_turnover_tear_sheet(
 @plotting.customize
 def create_full_tear_sheet(
     factor_data: pd.DataFrame,
+    factor_name: str = 'Factor',
     relative_returns: bool = True,
     group_neutral: bool = False,
     by_group: bool = False,
@@ -684,6 +696,10 @@ def create_full_tear_sheet(
         (optionally) the group the asset belongs to.
 
         - See full explanation in :class:`alphalens.utils.get_clean_factor_and_forward_returns`
+
+    factor_name : str, optional
+        Name of the factor. This will be used in the factor tear sheet plots and
+        tables.
 
     relative_returns : bool
         If True, relative returns (that is, relative to the overall mean) will
@@ -710,9 +726,10 @@ def create_full_tear_sheet(
         be shorted. Default False.
     """
 
-    plotting.plot_factor_distribution_table(factor_data)
+    plotting.plot_factor_distribution_table(factor_data, factor_name=factor_name)
     create_returns_tear_sheet(
         factor_data,
+        factor_name,
         relative_returns,
         group_neutral,
         by_group,
