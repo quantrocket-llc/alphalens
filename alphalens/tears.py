@@ -350,9 +350,17 @@ def create_returns_tear_sheet(
     )
 
     fr_cols = len(factor_returns.columns)
-    vertical_sections = 2 + fr_cols * 3
-    if relative_returns:
-        vertical_sections += 1
+    fr_1d_cols = [col for col in factor_returns.columns
+                  if col.lower() in ("1d", "overnight", "intraday")]
+    vertical_sections_per_1d_col = 3 if relative_returns else 2
+    vertical_sections = (
+        # bar plot and violin plot
+        2
+        # cumulative returns plots
+        + (len(fr_1d_cols) * vertical_sections_per_1d_col)
+        # top - bottom mean quantile returns
+        + fr_cols
+        )
     gf = GridFigure(rows=vertical_sections, cols=1)
 
     plotting.plot_returns_table(
@@ -377,19 +385,19 @@ def create_returns_tear_sheet(
         ax=gf.next_row()
     )
 
-    # Compute cumulative returns from daily simple returns, if '1D'
-    # returns are provided.
-    if "1D" in factor_returns:
+    # Compute cumulative returns from daily simple returns, if '1D', 'Intraday',
+    # or 'Overnight' returns are provided.
+    for colname in fr_1d_cols:
 
         title = (
             "Factor-Weighted"
             + (f", {group_name}-Neutral," if group_neutral else "")
-            + " %s Portfolio Cumulative Return (1D Period)"
+            + f" %s Portfolio Cumulative Return ({colname} Period)"
         )
 
         plotting.plot_cumulative_returns(
-            factor_returns[["1D"]].rename(columns={"1D": "Long/Short"}),
-            period="1D",
+            factor_returns[[colname]].rename(columns={colname: "Long/Short"}),
+            period=colname,
             color=sns.color_palette('colorblind')[3],
             title=title % "Long/Short",
             ax=gf.next_row()
@@ -397,16 +405,16 @@ def create_returns_tear_sheet(
 
         if relative_returns:
             plotting.plot_cumulative_returns_by_quantile(
-                demeaned_mean_quant_ret_bydate["1D"],
-                period="1D",
+                demeaned_mean_quant_ret_bydate[colname],
+                period=colname,
                 relative_or_actual="Relative",
                 group_neutral_name=group_name if group_neutral else None,
                 ax=gf.next_row()
             )
 
         plotting.plot_cumulative_returns_by_quantile(
-            actual_mean_quant_ret_bydate["1D"],
-            period="1D",
+            actual_mean_quant_ret_bydate[colname],
+            period=colname,
             # say "Actual" Cumulative Return if there's a "Relative"
             # plot, but otherwise nothing
             relative_or_actual="Actual" if relative_returns else "",
@@ -603,6 +611,9 @@ def create_turnover_tear_sheet(
         turnover_periods = utils.timedelta_strings_to_integers(
             turnover_periods,
         )
+
+    if not turnover_periods:
+        return
 
     quantile_factor = factor_data["factor_quantile"]
 

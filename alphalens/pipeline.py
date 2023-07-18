@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Union
+from typing import Union, Literal
 import pandas as pd
 from IPython.display import clear_output
 try:
@@ -40,7 +40,7 @@ def from_pipeline(
     end_date: str,
     bundle: str = None,
     factor: str = None,
-    periods: Union[int, list[int]] = None,
+    periods: Union[Union[int, Literal['oc', 'co']], list[Union[int, Literal['oc', 'co']]]] = None,
     groupby: Union[str, list[str]] = None,
     group_neutral: bool = False,
     quantiles: Union[int, list[float]] = None,
@@ -81,9 +81,12 @@ def from_pipeline(
     factor : str, required
         name of Pipeline column containing the factor to analyze.
 
-    periods : int or list of int
-        The period(s) over which to calculate forward returns.
-        Example: [1, 5, 21]. Defaults to [1].
+    periods : int or str or list of int or str
+        The period(s) over which to calculate the forward returns. Can either
+        be an integer number of days or one of the strings "co" or "oc" to
+        indicate overnight (close-to-open) or intraday (open-to-close) returns,
+        respectively. If a list is provided, forward returns will be computed for
+        each period. If omitted, defaults to [1]. Example: [1, 5, 21].
 
     groupby : str or list of str, optional
         name of one or more Pipeline columns to use for grouping. If provided,
