@@ -471,7 +471,22 @@ def create_returns_tear_sheet(
                 mean_quant_rateret_group.index.get_level_values(group_name).unique()
             )
 
-            vertical_sections = 2 + (((num_groups - 1) // 2) + 1)
+            vertical_sections_per_mini_plot_type = ((num_groups - 1) // 2) + 1
+
+            num_mini_plots = (
+                # mean return bar plots are always shown
+                1
+                # for each 1D column, we show an actual cumulative return plot
+                + len(fr_1d_cols)
+                # and a relative cumulative return plot, if relative_returns=True
+                + (len(fr_1d_cols) if relative_returns else 0)
+            )
+
+            vertical_sections = (
+                # bottom and top quantile composition by group
+                1
+                + vertical_sections_per_mini_plot_type * num_mini_plots
+            )
             gf = GridFigure(rows=vertical_sections, cols=2)
 
             plotting.plot_quantile_composition_by_group(
@@ -492,6 +507,64 @@ def create_returns_tear_sheet(
                 ax=ax_quantile_returns_bar_by_group,
                 factor_name=factor_name
             )
+
+            for colname in fr_1d_cols:
+
+                if relative_returns:
+                    (
+                        demeaned_mean_quant_group_ret_by_date,
+                        _,
+                    ) = perf.mean_return_by_quantile(
+                        factor_data,
+                        by_date=True,
+                        by_group=True,
+                        group_name=group_name,
+                        demeaned=True,
+                        group_adjust=group_neutral,
+                    )
+
+                    ax_quantile_cumulative_returns_by_group = [
+                        gf.next_cell() for _ in range(num_groups)
+                    ]
+
+                    plotting.plot_cumulative_returns_by_quantile(
+                        demeaned_mean_quant_group_ret_by_date[colname],
+                        period=colname,
+                        by_group=True,
+                        group_name=group_name,
+                        relative_or_actual="Relative",
+                        group_neutral_name=None,
+                        ax=ax_quantile_cumulative_returns_by_group,
+                        factor_name=factor_name
+                    )
+
+                (
+                    actual_mean_quant_group_ret_by_date,
+                    _,
+                ) = perf.mean_return_by_quantile(
+                    factor_data,
+                    by_date=True,
+                    by_group=True,
+                    group_name=group_name,
+                    demeaned=False,
+                    group_adjust=group_neutral,
+                )
+
+                ax_quantile_cumulative_returns_by_group = [
+                    gf.next_cell() for _ in range(num_groups)
+                ]
+
+                plotting.plot_cumulative_returns_by_quantile(
+                    actual_mean_quant_group_ret_by_date[colname],
+                    period=colname,
+                    by_group=True,
+                    group_name=group_name,
+                    # say "Actual" Cumulative Return if there's a "Relative"
+                    # plot, but otherwise nothing
+                    relative_or_actual="Actual" if relative_returns else "",
+                    ax=ax_quantile_cumulative_returns_by_group,
+                    factor_name=factor_name
+                )
             plt.show()
             gf.close()
 

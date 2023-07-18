@@ -911,6 +911,8 @@ def plot_cumulative_returns(factor_returns,
 
 def plot_cumulative_returns_by_quantile(quantile_returns,
                                         period=None,
+                                        by_group=False,
+                                        group_name=None,
                                         relative_or_actual="Relative",
                                         group_neutral_name=None,
                                         ax=None,
@@ -926,6 +928,10 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
         Length of period for which the returns are computed (e.g. 1 day)
         if 'period' is a string it must follow pandas.Timedelta constructor
         format (e.g. '1 days', '1D', '30m', '3h', '1D1h', etc)
+    by_group : bool
+        Disaggregated figures by group.
+    group_name : str, optional
+        name of the group column in quantile_returns. Defaults to "group".
     relative_or_actual : str
         label for type of cumulative returns, usually "Relative" or "Actual"
     group_neutral_name : str
@@ -940,31 +946,81 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
     relative_or_actual = relative_or_actual + " " if relative_or_actual else ""
     weighting = f"{group_neutral_name}-Neutral" if group_neutral_name else "Equal-Weighted"
 
-    if ax is None:
-        f, ax = plt.subplots(1, 1, figsize=(18, 6))
+    if by_group:
+        num_group = len(
+            quantile_returns.index.get_level_values(group_name).unique())
 
-    ret_wide = quantile_returns.unstack('factor_quantile')
+        if ax is None:
+            v_spaces = ((num_group - 1) // 2) + 1
+            f, ax = plt.subplots(v_spaces, 2, sharex=False,
+                                 sharey=True, figsize=(18, 6 * v_spaces))
+            ax = ax.flatten()
 
-    cum_ret = ret_wide.apply(perf.cumulative_returns)
+        for a, (gp, cor) in zip(ax, quantile_returns.groupby(level=group_name)):
 
-    cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
+            xs = cor.xs(gp, level=group_name)
 
-    cum_ret.plot(lw=2, ax=ax, cmap=cm.coolwarm)
-    ax.legend()
-    ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
-    ax.set(ylabel='Log Cumulative Returns',
-           title=(
-            f"{relative_or_actual}Cumulative Return by {factor_name} Quantile "
-            f"({period} Period, {weighting} Quantiles)"),
-           xlabel='',
-           yscale='symlog',
-           yticks=np.linspace(ymin, ymax, 5),
-           ylim=(ymin, ymax))
+            # If the group is empty, just hide the axis (this can
+            # happen when the group level is categorical and there is a
+            # category choice that is not present in the data)
+            if xs.empty:
+                a.set_axis_off()
+                continue
 
-    ax.yaxis.set_major_formatter(ScalarFormatter())
-    ax.axhline(1.0, linestyle='-', color='black', lw=1)
+            cor.index = cor.index.droplevel(group_name)
+            ret_wide = cor.unstack('factor_quantile')
 
-    return ax
+
+            cum_ret = ret_wide.apply(perf.cumulative_returns)
+
+            cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
+
+            cum_ret.plot(lw=2, ax=a, cmap=cm.coolwarm)
+            a.legend()
+            ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
+            a.set(ylabel='Log Cumulative Returns',
+                title=textwrap.wrap(
+                        f"{relative_or_actual}{period} Return by {factor_name} Quantile for {group_name.capitalize()} {'Group ' if group_name != 'group' else ''}{gp}",
+                        width=70),
+                xlabel='',
+                yscale='symlog',
+                yticks=np.linspace(ymin, ymax, 5),
+                ylim=(ymin, ymax))
+
+            a.yaxis.set_major_formatter(ScalarFormatter())
+            a.axhline(1.0, linestyle='-', color='black', lw=1)
+
+        if num_group < len(ax):
+            ax[-1].set_visible(False)
+
+        return ax
+
+    else:
+        if ax is None:
+            f, ax = plt.subplots(1, 1, figsize=(18, 6))
+
+        ret_wide = quantile_returns.unstack('factor_quantile')
+
+        cum_ret = ret_wide.apply(perf.cumulative_returns)
+
+        cum_ret = cum_ret.loc[:, ::-1]  # we want negative quantiles as 'red'
+
+        cum_ret.plot(lw=2, ax=ax, cmap=cm.coolwarm)
+        ax.legend()
+        ymin, ymax = cum_ret.min().min(), cum_ret.max().max()
+        ax.set(ylabel='Log Cumulative Returns',
+            title=(
+                f"{relative_or_actual}Cumulative Return by {factor_name} Quantile "
+                f"({period} Period, {weighting} Quantiles)"),
+            xlabel='',
+            yscale='symlog',
+            yticks=np.linspace(ymin, ymax, 5),
+            ylim=(ymin, ymax))
+
+        ax.yaxis.set_major_formatter(ScalarFormatter())
+        ax.axhline(1.0, linestyle='-', color='black', lw=1)
+
+        return ax
 
 
 def plot_quantile_average_cumulative_return(avg_cumulative_returns,
