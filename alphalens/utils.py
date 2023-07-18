@@ -1010,6 +1010,10 @@ def rate_of_return(period_ret, base_period):
         returns values.
     """
     period_len = period_ret.name
+    if period_len.lower() in ('intraday', 'overnight'):
+        period_len = "1D"
+    if base_period.lower() in ('intraday', 'overnight'):
+        base_period = "1D"
     conversion_factor = (pd.Timedelta(base_period) /
                          pd.Timedelta(period_len))
     return period_ret.add(1).pow(conversion_factor).sub(1)
@@ -1036,6 +1040,10 @@ def std_conversion(period_std, base_period):
         standard deviation/error values.
     """
     period_len = period_std.name
+    if period_len.lower() in ('intraday', 'overnight'):
+        period_len = "1D"
+    if base_period.lower() in ('intraday', 'overnight'):
+        base_period = "1D"
     conversion_factor = (pd.Timedelta(period_len) /
                          pd.Timedelta(base_period))
     return period_std / np.sqrt(conversion_factor)
@@ -1049,10 +1057,10 @@ def get_forward_returns_columns(columns, require_exact_day_multiple=False):
     # If exact day multiples are required in the forward return periods,
     # drop all other columns (e.g. drop 3D12h).
     if require_exact_day_multiple:
-        pattern = re.compile(r"^(\d+([D]))+$", re.IGNORECASE)
+        pattern = re.compile(r"^(\d+([D]))$", re.IGNORECASE)
         valid_columns = [(pattern.match(col) is not None) for col in columns]
     else:
-        pattern = re.compile(r"^(\d+([Dhms]|ms|us|ns]))+$", re.IGNORECASE)
+        pattern = re.compile(r"^(\d+([Dhms]|ms|us|ns]))+$|^(overnight)$|^(intraday)$", re.IGNORECASE)
         valid_columns = [(pattern.match(col) is not None) for col in columns]
 
     return columns[valid_columns]
@@ -1105,7 +1113,11 @@ def timedelta_strings_to_integers(sequence):
     sequence : list
         Integer days corresponding to the input sequence, e.g. [1, 5].
     """
-    return list(map(lambda x: pd.Timedelta(x).days, sequence))
+    special_cases = {
+        'intraday': "1D",
+        'overnight': "1D",
+    }
+    return list(map(lambda x: pd.Timedelta(special_cases.get(x.lower(), x)).days, sequence))
 
 
 def add_custom_calendar_timedelta(input, timedelta, freq):

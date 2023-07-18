@@ -361,7 +361,10 @@ def factor_alpha_beta(factor_data,
             alpha_beta.loc['Ann. alpha', period] = np.nan
             alpha_beta.loc['beta', period] = np.nan
         else:
-            freq_adjust = pd.Timedelta('252Days') / pd.Timedelta(period)
+            period_len = period
+            if period_len.lower() in ('intraday', 'overnight'):
+                period_len = "1D"
+            freq_adjust = pd.Timedelta('252Days') / pd.Timedelta(period_len)
 
             alpha_beta.loc['Ann. alpha', period] = \
                 (1 + alpha) ** freq_adjust - 1
@@ -428,6 +431,8 @@ def positions(weights, period, freq=None):
     weights = weights.unstack()
 
     if not isinstance(period, pd.Timedelta):
+        if period.lower() in ('intraday', 'overnight'):
+            period = "1D"
         period = pd.Timedelta(period)
 
     if freq is None:
