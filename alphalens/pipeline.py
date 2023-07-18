@@ -163,7 +163,8 @@ def from_pipeline(
 
     Returns
     -------
-    None
+    factor_data : pd.DataFrame
+        DataFrame containing the factor and forward returns for each security
 
     Notes
     -----
@@ -309,6 +310,8 @@ def from_pipeline(
         group_name=groupby_cols or "group",
         zero_aware=zero_aware
     )
+
+    return factor_data
 
 def _run_segment(pipeline,
     start_date,
