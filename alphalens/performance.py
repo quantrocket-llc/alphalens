@@ -72,7 +72,7 @@ def factor_information_coefficient(factor_data,
     if by_group:
         grouper.append(group_name)
 
-    ic = factor_data.groupby(grouper).apply(src_ic)
+    ic = factor_data.groupby(grouper, observed=True).apply(src_ic)
 
     return ic
 
@@ -131,7 +131,7 @@ def mean_information_coefficient(factor_data,
         ic = ic.mean()
 
     else:
-        ic = (ic.reset_index().set_index('date').groupby(grouper).mean())
+        ic = (ic.reset_index().set_index('date').groupby(grouper, observed=True).mean())
 
     return ic
 
@@ -215,11 +215,11 @@ def factor_weights(factor_data,
     if group_adjust:
         grouper.append(group_name)
 
-    weights = factor_data.groupby(grouper)['factor'] \
+    weights = factor_data.groupby(grouper, group_keys=False, observed=True)['factor'] \
         .apply(to_weights, demeaned, equal_weight)
 
     if group_adjust:
-        weights = weights.groupby(level='date').apply(to_weights, False, False)
+        weights = weights.groupby(level='date', group_keys=False).apply(to_weights, False, False)
 
     return weights
 
@@ -545,7 +545,7 @@ def mean_return_by_quantile(factor_data,
     if by_group:
         grouper.append(group_name)
 
-    group_stats = factor_data.groupby(grouper)[
+    group_stats = factor_data.groupby(grouper, observed=True)[
         utils.get_forward_returns_columns(factor_data.columns)] \
         .agg(['mean', 'std', 'count'])
 
@@ -555,7 +555,7 @@ def mean_return_by_quantile(factor_data,
         grouper = [mean_ret.index.get_level_values('factor_quantile')]
         if by_group:
             grouper.append(mean_ret.index.get_level_values(group_name))
-        group_stats = mean_ret.groupby(grouper)\
+        group_stats = mean_ret.groupby(grouper, observed=True)\
             .agg(['mean', 'std', 'count'])
         mean_ret = group_stats.T.xs('mean', level=1).T
 
@@ -758,7 +758,7 @@ def common_start_returns(factor,
             equities_slice |= set(demean_equities)
 
         series = returns.loc[returns.index[starting_index:ending_index],
-                             equities_slice]
+                             list(equities_slice)]
         series.index = range(starting_index - day_zero_index,
                              ending_index - day_zero_index)
 
@@ -772,7 +772,7 @@ def common_start_returns(factor,
 
         all_returns.append(series)
 
-    return pd.concat(all_returns, axis=1)
+    return pd.concat(all_returns, axis=1).sort_index()
 
 
 def average_cumulative_return_by_quantile(factor_data,
@@ -864,7 +864,7 @@ def average_cumulative_return_by_quantile(factor_data,
         #
         returns_bygroup = []
 
-        for group, g_data in factor_data.groupby(group_name):
+        for group, g_data in factor_data.groupby(group_name, observed=True):
             g_fq = g_data['factor_quantile']
             if group_adjust:
                 demean_by = g_fq  # demeans at group level
@@ -896,7 +896,7 @@ def average_cumulative_return_by_quantile(factor_data,
         #
         if group_adjust:
             all_returns = []
-            for group, g_data in factor_data.groupby(group_name):
+            for group, g_data in factor_data.groupby(group_name, observed=True):
                 g_fq = g_data['factor_quantile']
                 avgcumret = g_fq.groupby(g_fq).apply(
                     cumulative_return_around_event, g_fq

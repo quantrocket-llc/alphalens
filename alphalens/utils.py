@@ -33,6 +33,7 @@ from typing import Union
 import pandas as pd
 import numpy as np
 import re
+import warnings
 
 from IPython.display import display
 from pandas.tseries.offsets import CustomBusinessDay, Day, BusinessDay
@@ -191,7 +192,7 @@ def quantize_factor(factor_data,
     if by_group:
         grouper.append(group_name)
 
-    factor_quantile = factor_data.groupby(grouper)['factor'] \
+    factor_quantile = factor_data.groupby(grouper, group_keys=False, observed=True)['factor'] \
         .apply(quantile_calc, quantiles, bins, zero_aware, no_raise)
     factor_quantile.name = 'factor_quantile'
 
@@ -312,10 +313,18 @@ def compute_forward_returns(factor,
     column_list = []
 
     for period in sorted(periods):
-        if cumulative_returns:
-            returns = prices.pct_change(period)
-        else:
-            returns = prices.pct_change()
+        with warnings.catch_warnings():
+            # Suppress pandas >=2.1 FutureWarning:
+            #    The default fill_method='pad' in DataFrame.pct_change is deprecated
+            #    and will be removed in a future version. Call ffill before calling
+            #    pct_change to retain current behavior and silence this warning.
+            # The suggested fix doesn't help because prices has leading NaNs, which
+            # aren't filled by ffill(). Can likely remove in pandas 3.x.
+            warnings.simplefilter("ignore", category=FutureWarning)
+            if cumulative_returns:
+                returns = prices.pct_change(period)
+            else:
+                returns = prices.pct_change()
 
         forward_returns = \
             returns.shift(-period).reindex(factor_dateindex)
@@ -344,7 +353,7 @@ def compute_forward_returns(factor,
             period_len = diff_custom_calendar_timedeltas(start, end, freq)
             days_diffs.append(period_len.components.days)
 
-        delta_days = period_len.components.days - mode(days_diffs).mode[0]
+        delta_days = period_len.components.days - mode(days_diffs, keepdims=True).mode[0]
         period_len -= pd.Timedelta(days=delta_days)
         label = timedelta_to_string(period_len)
 
@@ -372,12 +381,12 @@ def compute_forward_returns(factor,
     # so temporarily disable the pandas validation
     def noop(*args, **kwargs):
         return None
-    orig_validate = pd.core.arrays.datetimelike.DatetimeLikeArrayMixin._validate_frequency
-    pd.core.arrays.datetimelike.DatetimeLikeArrayMixin._validate_frequency = noop
+    orig_validate = pd.core.arrays.datetimes.DatetimeArray._validate_frequency
+    pd.core.arrays.datetimes.DatetimeArray._validate_frequency = noop
     try:
         df.index.levels[0].freq = freq
     finally:
-        pd.core.arrays.datetimelike.DatetimeLikeArrayMixin._validate_frequency = orig_validate
+        pd.core.arrays.datetimes.DatetimeArray._validate_frequency = orig_validate
 
     df.index.set_names(['date', 'asset'], inplace=True)
 
@@ -451,7 +460,7 @@ def demean_forward_returns(factor_data, grouper=None):
         grouper = factor_data.index.get_level_values('date')
 
     cols = get_forward_returns_columns(factor_data.columns)
-    factor_data[cols] = factor_data.groupby(grouper)[cols] \
+    factor_data[cols] = factor_data.groupby(grouper, observed=True)[cols] \
         .transform(lambda x: x - x.mean())
 
     return factor_data
