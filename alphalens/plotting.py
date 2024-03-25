@@ -146,9 +146,7 @@ def plot_returns_table(alpha_beta,
 
     relative = "Relative " if demeaned else ""
 
-    returns_table = pd.DataFrame.from_records(
-        alpha_beta.values,
-        index=alpha_beta.index).T
+    returns_table = alpha_beta.copy()
     returns_table.loc[f"Mean {relative}Return Top Quantile (bps)"] = \
         mean_ret_quantile.iloc[-1] * DECIMAL_TO_BPS
     returns_table.loc[f"Mean {relative}Return Bottom Quantile (bps)"] = \
