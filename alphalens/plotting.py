@@ -973,7 +973,7 @@ def plot_cumulative_returns_by_quantile(quantile_returns,
                 continue
 
             cor.index = cor.index.droplevel(group_name)
-            ret_wide = cor.unstack('factor_quantile')
+            ret_wide = cor.unstack('factor_quantile').sort_index()
 
             cum_ret = ret_wide.apply(perf.cumulative_returns)
 
