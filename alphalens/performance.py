@@ -1068,7 +1068,7 @@ def factor_positions(factor_data,
         factor_weights(
             portfolio_data,
             demeaned=long_short,
-            group_neutral=group_neutral,
+            group_adjust=group_neutral,
             group_name=group_name,
             equal_weight=equal_weight)
 
@@ -1190,7 +1190,7 @@ def create_pyfolio_input(factor_data,
         equal_weight=equal_weight,
         quantiles=quantiles,
         groups=groups)
-    cumrets = cumrets.resample('1D').last().fillna(method='ffill')
+    cumrets = cumrets.resample('1D').last().ffill()
     returns = cumrets.pct_change().fillna(0)
 
     #
@@ -1207,7 +1207,7 @@ def create_pyfolio_input(factor_data,
         equal_weight=equal_weight,
         quantiles=quantiles,
         groups=groups)
-    positions = positions.resample('1D').sum().fillna(method='ffill')
+    positions = positions.resample('1D').sum().ffill()
     positions = positions.div(positions.abs().sum(axis=1), axis=0).fillna(0)
     positions['cash'] = 1. - positions.sum(axis=1)
 
@@ -1234,7 +1234,7 @@ def create_pyfolio_input(factor_data,
             group_neutral=False,
             equal_weight=True)
         benchmark_rets = benchmark_rets.resample(
-            '1D').last().fillna(method='ffill')
+            '1D').last().ffill()
         benchmark_rets = benchmark_rets.pct_change().fillna(0)
         benchmark_rets.name = 'benchmark'
     else:

@@ -41,6 +41,7 @@ from .. performance import (factor_information_coefficient,
                             factor_returns, factor_alpha_beta,
                             cumulative_returns, factor_weights,
                             common_start_returns,
+                            create_pyfolio_input,
                             average_cumulative_return_by_quantile)
 
 from .. utils import (get_forward_returns_columns,
@@ -1063,3 +1064,86 @@ class PerformanceTestCase(TestCase):
         expected = DataFrame(
             index=index, columns=range(-before, after + 1), data=expected_vals)
         assert_frame_equal(avgrt, expected)
+
+    def test_create_pyfolio_input(self):
+        """
+        Basic sanity check that create_pyfolio_input doesn't choke. This isn't testing
+        all the permutations of create_pyfolio_input.
+        """
+        dr = date_range(start='2015-1-15', end='2015-1-25')
+        dr.name = 'date'
+        tickers = ['A', 'B', 'C', 'D', 'E', 'F']
+        r1, r2, r3, r4 = (1.25, 1.50, 1.00, 0.50)
+        data = [[r1**i, r2**i, r3**i, r4**i, r2**i, r3**i]
+                for i in range(1, 12)]
+        prices = DataFrame(index=dr, columns=tickers, data=data)
+        dr2 = date_range(start='2015-1-18', end='2015-1-21')
+        dr2.name = 'date'
+        factor = DataFrame(index=dr2, columns=tickers,
+                           data=[[3, 4, 2, 1, nan, nan],
+                                 [3, 4, 2, 1, nan, nan],
+                                 [3, nan, nan, 1, 4, 2],
+                                 [3, nan, nan, 1, 4, 2]]).stack()
+
+        factor_data = get_clean_factor_and_forward_returns(
+            factor, prices, quantiles=3, periods=range(
+                0, 4), filter_zscore=False)
+
+        pf_returns, pf_positions, pf_benchmark = create_pyfolio_input(factor_data, '1D')
+
+        pf_returns.index = pf_returns.index.strftime("%Y-%m-%d")
+        self.assertEqual(
+            pf_returns.to_dict(),
+            {'2015-01-18': 0.0,
+            '2015-01-19': 0.40625,
+            '2015-01-20': 0.40625,
+            '2015-01-21': 0.40625}
+        )
+
+        pf_positions.index = pf_positions.index.strftime("%Y-%m-%d")
+        self.assertEqual(
+            pf_positions.to_dict(),
+            {'A': {'2015-01-18': 0.125,
+            '2015-01-19': 0.125,
+            '2015-01-20': 0.125,
+            '2015-01-21': 0.125,
+            '2015-01-22': 0.0},
+            'B': {'2015-01-18': 0.375,
+            '2015-01-19': 0.375,
+            '2015-01-20': 0.0,
+            '2015-01-21': 0.0,
+            '2015-01-22': 0.0},
+            'C': {'2015-01-18': -0.125,
+            '2015-01-19': -0.125,
+            '2015-01-20': 0.0,
+            '2015-01-21': 0.0,
+            '2015-01-22': 0.0},
+            'D': {'2015-01-18': -0.375,
+            '2015-01-19': -0.375,
+            '2015-01-20': -0.375,
+            '2015-01-21': -0.375,
+            '2015-01-22': 0.0},
+            'E': {'2015-01-18': 0.0,
+            '2015-01-19': 0.0,
+            '2015-01-20': 0.375,
+            '2015-01-21': 0.375,
+            '2015-01-22': 0.0},
+            'F': {'2015-01-18': 0.0,
+            '2015-01-19': 0.0,
+            '2015-01-20': -0.125,
+            '2015-01-21': -0.125,
+            '2015-01-22': 0.0},
+            'cash': {'2015-01-18': 1.0,
+            '2015-01-19': 1.0,
+            '2015-01-20': 1.0,
+            '2015-01-21': 1.0,
+            '2015-01-22': 1.0}}
+        )
+        pf_benchmark.index = pf_benchmark.index.strftime("%Y-%m-%d")
+        self.assertEqual(
+            pf_benchmark.to_dict(),
+            {'2015-01-18': 0.0,
+            '2015-01-19': 0.0625,
+            '2015-01-20': 0.0625,
+            '2015-01-21': 0.0625}
+        )

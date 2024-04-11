@@ -50,7 +50,7 @@ def from_pipeline(
     max_loss: float = 0.35,
     zero_aware: bool = False,
     segment: str = None
-    ) -> None:
+    ) -> pd.DataFrame:
     """
     Create a full tear sheet from a zipline Pipeline. This is a shortcut for
     separately calling:
