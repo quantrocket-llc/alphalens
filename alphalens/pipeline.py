@@ -49,6 +49,7 @@ def from_pipeline(
     relative_returns: bool = True,
     max_loss: float = 0.35,
     zero_aware: bool = False,
+    enter_on_open: bool = False,
     segment: str = None
     ) -> pd.DataFrame:
     """
@@ -153,6 +154,10 @@ def from_pipeline(
         values below the mean will be shorted. False is useful if your factor values
         are all positive, all negative, or if the distinction between positive
         and negative doesn't matter. Default False.
+
+    enter_on_open : bool
+        If True, calculate forward returns using open prices. The default is to use
+        close prices. Default False.
 
     segment : str, optional
         run pipeline in date segments of this size, to reduce memory usage
@@ -276,6 +281,7 @@ def from_pipeline(
                 groupby_labels=groupby_labels,
                 max_loss=max_loss,
                 zero_aware=zero_aware,
+                enter_on_open=enter_on_open,
                 progress_meter=progress_meter)
 
             factor_data.append(partial_factor_data)
@@ -298,7 +304,8 @@ def from_pipeline(
             bins=bins,
             groupby_labels=groupby_labels,
             max_loss=max_loss,
-            zero_aware=zero_aware)
+            zero_aware=zero_aware,
+            enter_on_open=enter_on_open)
 
     clear_output()
     create_full_tear_sheet(
@@ -326,6 +333,7 @@ def _run_segment(pipeline,
     groupby_labels=None,
     max_loss=0.35,
     zero_aware=False,
+    enter_on_open=False,
     progress_meter=None):
 
     if progress_meter:
@@ -368,7 +376,8 @@ def _run_segment(pipeline,
     forward_returns = get_forward_returns(
         factor_data,
         periods=periods,
-        bundle=bundle
+        bundle=bundle,
+        enter_on_open=enter_on_open
     )
 
     if progress_meter:
