@@ -282,6 +282,7 @@ def from_pipeline(
                 max_loss=max_loss,
                 zero_aware=zero_aware,
                 enter_on_open=enter_on_open,
+                initial_universe=pipeline.initial_universe,
                 progress_meter=progress_meter)
 
             factor_data.append(partial_factor_data)
@@ -305,7 +306,8 @@ def from_pipeline(
             groupby_labels=groupby_labels,
             max_loss=max_loss,
             zero_aware=zero_aware,
-            enter_on_open=enter_on_open)
+            enter_on_open=enter_on_open,
+            initial_universe=pipeline.initial_universe)
 
     clear_output()
     create_full_tear_sheet(
@@ -334,6 +336,7 @@ def _run_segment(pipeline,
     max_loss=0.35,
     zero_aware=False,
     enter_on_open=False,
+    initial_universe=None,
     progress_meter=None):
 
     if progress_meter:
@@ -377,7 +380,8 @@ def _run_segment(pipeline,
         factor_data,
         periods=periods,
         bundle=bundle,
-        enter_on_open=enter_on_open
+        enter_on_open=enter_on_open,
+        initial_universe=initial_universe
     )
 
     if progress_meter:

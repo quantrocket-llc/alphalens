@@ -15,13 +15,69 @@
 
 from unittest import TestCase
 from unittest import skipIf
+from unittest.mock import patch
+import pandas as pd
+try:
+    from zipline.pipeline import Pipeline, master, EquityPricing
+    zipline_installed = True
+except ImportError:
+    zipline_installed = False
 try:
     from quantrocket.utils import segmented_date_range
     quantrocket_installed = True
 except ImportError:
     quantrocket_installed = False
-from ..pipeline import SegmentedAnalysisProgressMeter
+from ..pipeline import SegmentedAnalysisProgressMeter, from_pipeline
 
+
+class FromPipelineTestCase(TestCase):
+
+    @skipIf(not zipline_installed, "zipline not installed")
+    @patch("alphalens.pipeline.get_forward_returns")
+    def test_initial_universe(self, mock_get_forward_returns):
+        """
+        Test that the initial universe is passed from the Pipeline to
+        get_forward_returns.
+        """
+        initial_universe = master.SecuritiesMaster.Symbol.latest.eq("AAPL")
+        pipeline = Pipeline(
+            columns={"close": EquityPricing.close.latest},
+            initial_universe=initial_universe)
+
+        idx = index=pd.MultiIndex.from_product(
+            [pd.date_range("2018-01-01", "2018-01-02"), ["AAPL"]], names=["date", "asset"])
+
+        def mock_run_pipeline(*args, **kwargs):
+            return pd.DataFrame({"close": [1,2]}, index=idx)
+
+        forward_returns = pd.DataFrame({"1D": 1}, index=idx)
+        mock_get_forward_returns.return_value = forward_returns
+
+        with patch("alphalens.pipeline.run_pipeline", mock_run_pipeline):
+
+            from_pipeline(pipeline, "2018-01-01", "2018-01-02", factor="close", quantiles=1)
+
+        self.assertEqual(len(mock_get_forward_returns.mock_calls), 1)
+
+        # mock_get_forward_returns should be called with the initial_universe
+        get_forward_returns_call = mock_get_forward_returns.mock_calls[0]
+
+        _, args, kwargs = get_forward_returns_call
+
+        self.assertEqual(kwargs["initial_universe"], initial_universe)
+
+        # repeat with segmented backtest
+        with patch("alphalens.pipeline.run_pipeline", mock_run_pipeline):
+
+            from_pipeline(pipeline, "2018-01-01", "2018-01-02", factor="close",
+                          quantiles=1, segment="D")
+
+        # skip the preflight call to get_forward_returns
+        self.assertEqual(len(mock_get_forward_returns.mock_calls), 3)
+
+        get_forward_returns_call = mock_get_forward_returns.mock_calls[-1]
+        _, args, kwargs = get_forward_returns_call
+        self.assertEqual(kwargs["initial_universe"], initial_universe)
 
 class ProgressMeterTestCase(TestCase):
 
