@@ -1099,13 +1099,16 @@ def create_pyfolio_input(factor_data,
         A MultiIndex DataFrame indexed by date (level 0) and asset (level 1),
         containing the values for a single alpha factor, forward returns for
         each period, the factor quantile/bin that factor value belongs to,
-        and (optionally) the group the asset belongs to.
-        - See full explanation in utils.get_clean_factor_and_forward_returns
+        and (optionally) the group the asset belongs to. See full explanation
+        in utils.get_clean_factor_and_forward_returns
+
     period : string
         'factor_data' column name corresponding to the 'period' returns to be
         used in the computation of porfolio returns
+
     capital : float, optional
         If set, then compute 'positions' in dollar amount instead of percentage
+
     long_short : bool, optional
         if True enforce a dollar neutral long-short portfolio: asset weights
         will be computed by demeaning factor values and dividing by the sum of
@@ -1117,6 +1120,7 @@ def create_pyfolio_input(factor_data,
         leverage of 1). Positive factor values will generate long positions and
         negative factor values will produce short positions so that a factor
         with only positive values will result in a long only portfolio.
+
     group_neutral : bool, optional
         If True simulates a group neutral portfolio: the portfolio weights
         will be computed so that each group will weigh the same.
@@ -1124,19 +1128,24 @@ def create_pyfolio_input(factor_data,
         the group level resulting in a dollar neutral, group neutral,
         long-short portfolio.
         If False group information will not be used in weights computation.
+
     group_name : str, optional
         name of the group column in factor_data. Defaults to "group".
+
     equal_weight : bool, optional
         if True the assets will be equal-weighted. If long_short is True then
         the factor universe will be split in two equal sized groups with the
         top assets in long positions and bottom assets in short positions.
         if False the assets will be factor-weighed, see 'long_short' argument
+
     quantiles: sequence[int], optional
         Use only specific quantiles in the computation. By default all
         quantiles are used
+
     groups: sequence[string], optional
         Use only specific groups in the computation. By default all groups
         are used
+
     benchmark_period : string, optional
         By default benchmark returns are computed as the factor universe mean
         daily returns but 'benchmark_period' allows to choose a 'factor_data'
@@ -1144,7 +1153,6 @@ def create_pyfolio_input(factor_data,
         benchmark returns. More generally benchmark returns are computed as the
         factor universe returns traded at 'benchmark_period' frequency, equal
         weighting and long only
-
 
     Returns
     -------
