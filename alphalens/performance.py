@@ -72,7 +72,7 @@ def factor_information_coefficient(factor_data,
     if by_group:
         grouper.append(group_name)
 
-    ic = factor_data.groupby(grouper, observed=True).apply(src_ic)
+    ic = factor_data.groupby(grouper, observed=True).apply(src_ic, include_groups=False)
 
     return ic
 
@@ -492,7 +492,7 @@ def positions(weights, period, freq=None):
 
         portfolio_weights.loc[curr_time] = tot_weights
 
-    return portfolio_weights.fillna(0)
+    return portfolio_weights.infer_objects(copy=False).fillna(0)
 
 
 def mean_return_by_quantile(factor_data,
@@ -905,7 +905,7 @@ def average_cumulative_return_by_quantile(factor_data,
             q_returns = pd.concat(all_returns, axis=1)
             q_returns = pd.DataFrame({'mean': q_returns.mean(axis=1),
                                       'std': q_returns.std(axis=1)})
-            return q_returns.unstack(level=1).stack(level=0)
+            return q_returns.unstack(level=1).stack(level=0, future_stack=True)
         elif demeaned:
             fq = factor_data['factor_quantile']
             return fq.groupby(fq).apply(average_cumulative_return, fq)

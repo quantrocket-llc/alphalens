@@ -22,3 +22,6 @@ dist
 
 # Emacs temp files.
 *~
+
+versioneer.py
+alphalens/_version.py

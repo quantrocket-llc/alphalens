@@ -244,7 +244,7 @@ the binning phase is further explained below:
 Pandas error message:
 ----------------------
 
-Bin edges must be unique: array([1.  , 1.75, 2.5 , 3.  , 3.  ]).
+Bin edges must be unique: Index([1.0, 1.75, 2.5, 3.0, 3.0], dtype='float64', name=2015-01-11 00:00:00).
 You can drop duplicate edges by setting the 'duplicates' kwarg
 
 ----------------------
@@ -268,13 +268,12 @@ Please see :class:`alphalens.utils.get_clean_factor` documentation for
 full documentation of 'bins' and 'quantiles' options."""
         self.assertEqual(str(cm.exception).strip(), expected)
 
-        # with only 3 quantiles, it's okay
-        with self.assertRaises(MaxLossExceededError) as cm:
-            get_clean_factor_and_forward_returns(
-                factor, prices,
-                groupby=factor_groups,
-                quantiles=3,
-                periods=(1, 2, 3))
+        # with only 3 quantiles, it's okay, MaxLossExceededError is not raised
+        get_clean_factor_and_forward_returns(
+            factor, prices,
+            groupby=factor_groups,
+            quantiles=3,
+            periods=(1, 2, 3))
 
     def test_get_clean_factor_and_forward_returns_1(self):
         """

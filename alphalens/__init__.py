@@ -20,11 +20,7 @@ from . import tears
 from . import utils
 from .pipeline import from_pipeline
 
-from ._version import get_versions
-
-
-__version__ = get_versions()['version']
-del get_versions
+from ._version import version as __version__
 
 __all__ = [
     'from_pipeline',
@@ -32,5 +28,3 @@ __all__ = [
     'utils'
 ]
 
-from . import _version
-__version__ = _version.get_versions()['version']

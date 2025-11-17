@@ -84,7 +84,7 @@ class ProgressMeterTestCase(TestCase):
     @skipIf(not quantrocket_installed, "quantrocket not installed")
     def test_progress_meter(self):
 
-        date_segments = segmented_date_range("2018-01-01", "2022-11-20", segment="Y")
+        date_segments = segmented_date_range("2018-01-01", "2022-11-20", segment="YE")
 
         self.assertListEqual(
             date_segments,

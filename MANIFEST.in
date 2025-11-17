@@ -1,3 +1,0 @@
-include versioneer.py
-include alphalens/_version.py
-include LICENSE
