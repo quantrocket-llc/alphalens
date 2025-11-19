@@ -161,7 +161,7 @@ def from_pipeline(
 
     segment : str, optional
         run pipeline in date segments of this size, to reduce memory usage
-        (use Pandas frequency string, e.g. 'YE' for yearly segments or 'QE'
+        (use Pandas frequency string, e.g. 'Y' for yearly segments or 'Q'
         for quarterly segments). The resulting partial pipeline outputs will
         be concatenated together to produce a single tear sheet, the same
         as if this option were not used.
@@ -203,7 +203,7 @@ def from_pipeline(
             factor="momentum",
             quantiles=5,
             groupby="sector",
-            segment="YE"
+            segment="Y"
         )
     """
     if not zipline_installed:
